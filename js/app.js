@@ -1,7 +1,12 @@
 /* global require, navigator, BunBunMedia */
 (function (api) {
   'use strict';
-  var historyKey = 'bunbunmedia.activity.v2', convertTimer = null, activeDownload = null;
+  var historyKey = 'bunbunmedia.activity.v2', urlKey = 'bunbunmedia.sourceUrl.v1', convertTimer = null, activeDownload = null;
+
+  function saveUrl(value) {
+    var url = String(value || '').trim();
+    if (url) localStorage.setItem(urlKey, url); else localStorage.removeItem(urlKey);
+  }
 
   function setProgress(percent, text) {
     if (percent !== null && percent !== undefined) { api.byId('progress-bar').style.width = Math.max(0, Math.min(100, percent)) + '%'; api.byId('progress-value').textContent = Math.round(percent) + '%'; }
@@ -88,6 +93,7 @@
   function beginDownload() {
     var raw = api.byId('video-url').value.trim();
     if (!raw) { api.status('Enter a YouTube URL.', 'error'); return; } if (!api.validUrl(raw)) { api.status('That is not a supported YouTube URL.', 'error'); return; }
+    saveUrl(raw);
     var section = null;
     if (api.byId('timestamp-enabled').checked) {
       section = api.timecode.range(api.byId('timestamp-start').value, api.byId('timestamp-end').value, api.byId('precise-cuts').checked);
@@ -106,14 +112,15 @@
       success: function (file, resolution) {
         stopTicker(); api.state.latest = file; setDownloadBusy(false); setProgress(100, 'Download complete');
         var path = require('path'), fs = require('fs'), mb = (fs.statSync(file).size / 1048576).toFixed(1);
-        api.byId('result-name').textContent = path.basename(file); api.byId('result-meta').textContent = mb + ' MB • ' + api.state.format.replace('+', ' + ') + (section ? ' • ' + section.label : '') + ' • ' + path.dirname(file); api.show('result', true); api.status((section ? 'Timestamped clip ' + section.label : 'Download') + ' complete' + (resolution ? ' (' + resolution + ')' : '') + '.', 'success'); api.byId('video-url').value = ''; addHistory(raw, 'success', (section ? 'Clip ' + section.label + ' • ' : '') + (resolution ? 'Downloaded at ' + resolution : 'Downloaded successfully')); renderLibrary(); setTimeout(function () { api.show('progress', false); }, 700);
+        api.byId('result-name').textContent = path.basename(file); api.byId('result-meta').textContent = mb + ' MB • ' + api.state.format.replace('+', ' + ') + (section ? ' • ' + section.label : '') + ' • ' + path.dirname(file); api.show('result', true); api.status((section ? 'Timestamped clip ' + section.label : 'Download') + ' complete' + (resolution ? ' (' + resolution + ')' : '') + '.', 'success'); addHistory(raw, 'success', (section ? 'Clip ' + section.label + ' • ' : '') + (resolution ? 'Downloaded at ' + resolution : 'Downloaded successfully')); renderLibrary(); setTimeout(function () { api.show('progress', false); }, 700);
       }
     });
   }
   function bindEvents() {
     api.byId('formats').addEventListener('click', function (event) { var button = event.target.closest('.format'); if (!button) return; Array.prototype.forEach.call(document.querySelectorAll('.format'), function (node) { node.classList.remove('selected'); node.setAttribute('aria-checked', 'false'); }); button.classList.add('selected'); button.setAttribute('aria-checked', 'true'); api.state.format = button.getAttribute('data-format'); });
-    api.byId('clear-url').addEventListener('click', function () { api.byId('video-url').value = ''; api.byId('video-url').focus(); api.status('', ''); });
-    api.byId('paste-url').addEventListener('click', function () { var input = api.byId('video-url'); if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (text) { input.value = text.trim(); }).catch(function () { input.value = ''; input.focus(); api.status('Press Ctrl+V to paste.', 'info'); }); else { input.value = ''; input.focus(); api.status('Press Ctrl+V to paste.', 'info'); } });
+    api.byId('video-url').addEventListener('input', function () { saveUrl(this.value); });
+    api.byId('clear-url').addEventListener('click', function () { api.byId('video-url').value = ''; saveUrl(''); api.byId('video-url').focus(); api.status('', ''); });
+    api.byId('paste-url').addEventListener('click', function () { var input = api.byId('video-url'); if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (text) { input.value = text.trim(); saveUrl(input.value); }).catch(function () { input.focus(); api.status('Press Ctrl+V to paste.', 'info'); }); else { input.focus(); api.status('Press Ctrl+V to paste.', 'info'); } });
     api.byId('cookies').addEventListener('change', cookieGuide); api.byId('check-cookies').addEventListener('click', function () { var node = api.byId('cookie-help'); node.textContent = 'Checking account access…'; api.media.verifyCookies(function (ok, message) { node.className = 'inline-notice ' + (ok ? 'ok' : 'fail'); node.textContent = (ok ? '✓ ' : '× ') + message; }); });
     api.byId('timestamp-enabled').addEventListener('change', function () { api.show('timestamp-options', this.checked); if (this.checked) api.byId('timestamp-start').focus(); });
     api.byId('browse-folder').addEventListener('click', function () { api.hostCall('browseForFolder', '', function (result) { if (result && result !== 'null') { api.state.folder = result; api.byId('folder').textContent = result; renderLibrary(); } }); });
@@ -122,7 +129,7 @@
   }
   var initialized = false;
   function initialize() {
-    if (!initialized) { api.state.folder = api.defaultFolder(); api.byId('folder').textContent = api.state.folder; bindEvents(); initialized = true; }
+    if (!initialized) { api.state.folder = api.defaultFolder(); api.byId('folder').textContent = api.state.folder; api.byId('video-url').value = localStorage.getItem(urlKey) || ''; bindEvents(); initialized = true; }
     renderHistory(); renderLibrary();
     api.media.checkUpdate(function (outdated) { if (outdated) updateDownloader(); });
   }

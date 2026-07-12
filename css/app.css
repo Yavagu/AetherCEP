@@ -292,6 +292,12 @@ svg {
 .diagnostics-toggle { margin-top: 12px; }
 .diagnostics-toggle small { color: var(--text-muted); font-size: 9px; }
 .field-hint { margin: 9px 0 0; line-height: 1.45; }
+.timestamp-guide { display: flex; align-items: flex-start; gap: 8px; margin-top: 11px; padding: 9px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: rgba(124,109,242,.055); color: var(--text-secondary); }
+.timestamp-guide-icon { display: grid; place-items: center; width: 16px; height: 16px; flex: none; border: 1px solid rgba(124,109,242,.35); border-radius: 50%; color: var(--accent-bright); font: 700 9px/1 Arial,sans-serif; }
+.timestamp-guide b { display: block; margin-bottom: 2px; font-size: 9px; letter-spacing: .15px; }
+.timestamp-guide p { margin: 0; color: var(--text-secondary); font-size: 9px; line-height: 1.45; }
+.timestamp-guide small { display: block; margin-top: 3px; color: var(--text-muted); font-size: 8px; line-height: 1.4; }
+.timestamp-guide code { padding: 1px 4px; border: 1px solid var(--border); border-radius: 3px; background: #111419; color: #c8c3ff; font: 9px/1.3 Consolas,monospace; }
 
 .compact-heading { margin-bottom: 10px; }
 .destination-row { display: flex; align-items: center; gap: 8px; }
@@ -502,6 +508,9 @@ body { min-width: 280px; background: linear-gradient(90deg,transparent,rgba(255,
 .switch input:checked + span { background: var(--accent); }
 .timestamp-panel { background: #1d1d1d; }
 .check-control span { border-radius: 2px; background: #181818; }
+.timestamp-guide { border-color: #383838; border-radius: 3px; background: rgba(38,128,235,.055); }
+.timestamp-guide-icon { border-color: rgba(38,128,235,.4); color: #65aff9; }
+.timestamp-guide code { border-color: #3c3c3c; background: #151515; color: #70b7ff; }
 .folder-icon { border-radius: 3px; background: rgba(38,128,235,.1); color: #65aff9; }
 .folder-path { font-family: Consolas,"Courier New",monospace; font-size: 9px; }
 .download-button { min-height: 50px; margin-top: 11px; border-color: #3c92ed; border-radius: 3px; background: linear-gradient(180deg,#2784e8,#176bc7); box-shadow: 0 5px 16px rgba(0,85,175,.28),inset 0 1px rgba(255,255,255,.15); }

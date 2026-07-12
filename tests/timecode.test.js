@@ -8,6 +8,7 @@ vm.runInContext(fs.readFileSync('js/timecode.js', 'utf8'), context);
 const timecode = context.BunBunMedia.timecode;
 
 assert.strictEqual(timecode.parse('90'), 90);
+assert.strictEqual(timecode.parse('272'), 272);
 assert.strictEqual(timecode.parse('2:15'), 135);
 assert.strictEqual(timecode.parse('1:20:00'), 4800);
 assert.ok(Number.isNaN(timecode.parse('1:60')));
@@ -16,6 +17,10 @@ assert.ok(Number.isNaN(timecode.parse('1:60:00')));
 const openStart = timecode.range('', '2:15', true);
 assert.strictEqual(openStart.argument, '*0-135');
 assert.strictEqual(openStart.precise, true);
+
+const secondsOnly = timecode.range('272', '', false);
+assert.strictEqual(secondsOnly.argument, '*272-inf');
+assert.strictEqual(secondsOnly.label, '4:32–end');
 
 const multiHour = timecode.range('1:20:00', '1:25:30', false);
 assert.strictEqual(multiHour.argument, '*4800-5130');
