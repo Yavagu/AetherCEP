@@ -20,10 +20,27 @@ var BunBunMedia = window.BunBunMedia || {};
     node.className = text ? 'status-message ' + (type || 'info') : 'status-message hidden';
   };
   api.videoId = function (url) {
-    var match = String(url).match(/[?&]v=([\w-]{11})/) || String(url).match(/(?:youtu\.be\/|shorts\/|embed\/)([\w-]{11})/);
-    return match ? match[1] : '';
+    var value = String(url || '').trim(), match;
+    match = value.match(/[?&]v=([\w-]{11})(?:[&#]|$)/i) || value.match(/(?:youtu\.be\/|youtube\.com\/(?:shorts|embed)\/)([\w-]{11})(?:[/?#]|$)/i);
+    if (match) return match[1];
+
+    match = value.match(/instagram\.com\/(?:p|reel|reels|tv)\/([\w-]+)(?:[/?#]|$)/i) ||
+      value.match(/instagram\.com\/stories\/[^/?#]+\/([\w-]+)(?:[/?#]|$)/i) ||
+      value.match(/(?:www\.)?snapchat\.com\/(?:spotlight|t|add|story|stories|p)\/([\w-]+)(?:[/?#]|$)/i) ||
+      value.match(/(?:story|t)\.snapchat\.com\/(?:p\/)?([\w-]+)(?:[/?#]|$)/i);
+    if (match) return match[1];
+
+    if (/(?:^|\/\/)(?:www\.)?instagram\.com\//i.test(value) || /(?:^|\/\/)(?:www\.|story\.|t\.)?snapchat\.com\//i.test(value)) {
+      try { return require('crypto').createHash('md5').update(value).digest('hex').slice(0, 11); } catch (e) { return ''; }
+    }
+    return '';
   };
-  api.validUrl = function (url) { return /^(https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)[\w-]+/i.test(url); };
+  api.validUrl = function (url) {
+    var value = String(url || '').trim();
+    return /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?(?:[^#\s]*&)?v=|shorts\/|embed\/)|youtu\.be\/)[\w-]+(?:[/?&#]|$)/i.test(value) ||
+      /^(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:(?:p|reel|reels|tv)\/[\w-]+|stories\/[^/?#\s]+\/[\w-]+)(?:[/?#]|$)/i.test(value) ||
+      /^(?:https?:\/\/)?(?:(?:www\.)?snapchat\.com\/(?:spotlight|t|add|story|stories|p)\/|(?:story|t)\.snapchat\.com\/(?:p\/)?)[\w-]+(?:[/?#]|$)/i.test(value);
+  };
   api.defaultFolder = function () {
     try {
       var path = require('path'), fs = require('fs');

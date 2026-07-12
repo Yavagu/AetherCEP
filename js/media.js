@@ -157,7 +157,8 @@
       } catch (e) { done(false); }
     },
     download: function (rawUrl, quality, section, handlers) {
-      var id = api.videoId(rawUrl), url = id ? 'https://www.youtube.com/watch?v=' + id : rawUrl, cancelled = false, currentProcess = null;
+      var isYouTube = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/|youtu\.be\/)/i.test(String(rawUrl).trim());
+      var id = api.videoId(rawUrl), url = isYouTube && id ? 'https://www.youtube.com/watch?v=' + id : rawUrl, cancelled = false, currentProcess = null;
       function cancel() {
         if (cancelled) return;
         cancelled = true;
@@ -183,7 +184,7 @@
           if (cancelled) { cleanup(); return; }
           if (code !== 0 && options.cookies && /dpapi|failed to decrypt|could not copy.*cookie/i.test(log)) { handlers.retry('Sign-in failed; retrying as public video…'); run(removeCookieArguments(args), { cookies: false, format: options.format, age: true }); return; }
           if (code !== 0 && options.format && /403|forbidden|requested format|format is not available|fragment/i.test(log)) { handlers.retry('Selected stream failed; trying a compatible format…'); run(argumentsFor(url, quality, true, section), { cookies: false, format: false, age: false }); return; }
-          if (code !== 0 && options.age && !cookieArguments().length && /age|confirm your age|sign in to confirm/i.test(log)) { var bypass = args.slice(); bypass.unshift('--extractor-args', 'youtube:player_client=tv_embedded,web_embedded,mediaconnect,default'); handlers.retry('Trying the public age-gate fallback…'); run(bypass, { cookies: false, format: true, age: false }); return; }
+          if (code !== 0 && isYouTube && options.age && !cookieArguments().length && /age|confirm your age|sign in to confirm/i.test(log)) { var bypass = args.slice(); bypass.unshift('--extractor-args', 'youtube:player_client=tv_embedded,web_embedded,mediaconnect,default'); handlers.retry('Trying the public age-gate fallback…'); run(bypass, { cookies: false, format: true, age: false }); return; }
           if (code !== 0) { handlers.error(friendlyError(log)); return; }
           cleanup(); var file = outputFromLog(log) || outputById(id, section);
           if (!validate(file)) { try { require('fs').unlinkSync(file); } catch (e) {} handlers.error('The downloaded media was incomplete and has been removed. Please retry.'); return; }
