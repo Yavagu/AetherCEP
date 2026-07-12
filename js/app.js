@@ -50,8 +50,15 @@
     });
   }
   function importMedia(file, timeline) {
-    api.hostCall(timeline ? 'importAndAddToTimeline' : 'importToBin', file, function (result) {
-      api.status(result === 'true' ? (timeline ? 'Imported to the timeline.' : 'Added to the project bin.') : 'Import failed: ' + result, result === 'true' ? 'success' : 'error');
+    api.media.prepareForImport(file, {
+      converting: function () { api.status('VP9 video detected. Converting a Premiere-compatible H.264 copy…', 'info'); },
+      error: function (message) { api.status(message, 'error'); },
+      ready: function (importFile, converted) {
+        if (converted) { if (api.state.latest === file) api.state.latest = importFile; renderLibrary(); }
+        api.hostCall(timeline ? 'importAndAddToTimeline' : 'importToBin', importFile, function (result) {
+          api.status(result === 'true' ? (converted ? 'Converted VP9 to H.264 and imported successfully.' : (timeline ? 'Imported to the timeline.' : 'Added to the project bin.')) : 'Import failed: ' + result, result === 'true' ? 'success' : 'error');
+        });
+      }
     });
   }
   function renderLibrary() {

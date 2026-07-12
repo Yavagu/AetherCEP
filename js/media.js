@@ -107,15 +107,57 @@
     for (var p = 0; p < patterns.length; p += 1) { var match, latest = ''; while ((match = patterns[p].exec(log))) latest = match[1].trim(); if (latest && fs.existsSync(latest)) return latest; }
     return '';
   }
+  function ffprobe() {
+    var path = require('path'), probe = api.bin('ffprobe');
+    if (!api.exists(probe) && ffmpeg() && ffmpeg() !== 'ffmpeg') probe = path.join(path.dirname(ffmpeg()), 'ffprobe.exe');
+    if (api.exists(probe)) return probe;
+    try { if (require('child_process').spawnSync('ffprobe', ['-version'], { timeout: 3000, windowsHide: true }).status === 0) return 'ffprobe'; } catch (e) {}
+    return '';
+  }
+  function uniqueH264Output(file) {
+    var fs = require('fs'), path = require('path'), parsed = path.parse(file), base = path.join(parsed.dir, parsed.name + ' [H.264]'), output = base + '.mp4', number = 2;
+    while (fs.existsSync(output)) { output = base + ' (' + number + ').mp4'; number += 1; }
+    return output;
+  }
+  function prepareForImport(file, handlers) {
+    var probe = ffprobe();
+    if (!probe) { handlers.ready(file, false); return; }
+    var output = '', probeProcess, probeFinished = false;
+    function useOriginal() { if (!probeFinished) { probeFinished = true; handlers.ready(file, false); } }
+    try {
+      probeProcess = require('child_process').spawn(probe, ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=codec_name,codec_tag_string', '-of', 'csv=p=0', file], { windowsHide: true });
+    } catch (e) { useOriginal(); return; }
+    probeProcess.stdout.on('data', function (data) { output += data.toString(); });
+    probeProcess.on('error', useOriginal);
+    probeProcess.on('close', function (code) {
+      if (probeFinished) return;
+      if (code !== 0 || !/(?:^|[,\s])vp0?9(?:$|[,\s])/i.test(output)) { useOriginal(); return; }
+      probeFinished = true;
+      var encoder = ffmpeg();
+      if (!encoder) { handlers.error('This VP9 video needs ffmpeg before Premiere can import it. Run Setup.bat to restore ffmpeg.'); return; }
+      var fs = require('fs'), path = require('path'), destination = uniqueH264Output(file), temporary = path.join(path.dirname(destination), '.' + path.basename(destination) + '.converting.mp4'), process, conversionFinished = false;
+      handlers.converting();
+      try {
+        process = require('child_process').spawn(encoder, ['-y', '-i', file, '-map', '0:v:0', '-map', '0:a?', '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '320k', '-movflags', '+faststart', temporary], { windowsHide: true, env: childEnvironment() });
+      } catch (e) { handlers.error('Could not start the VP9 conversion: ' + e.message); return; }
+      process.on('error', function (e) { if (conversionFinished) return; conversionFinished = true; try { fs.unlinkSync(temporary); } catch (ignore) {} handlers.error('Could not convert the VP9 video: ' + e.message); });
+      process.on('close', function (exitCode) {
+        if (conversionFinished) return;
+        conversionFinished = true;
+        if (exitCode !== 0 || !fs.existsSync(temporary)) { try { fs.unlinkSync(temporary); } catch (e) {} handlers.error('Could not convert the VP9 video for Premiere.'); return; }
+        try { fs.renameSync(temporary, destination); } catch (e) { try { fs.unlinkSync(temporary); } catch (ignore) {} handlers.error('VP9 conversion finished, but the compatible file could not be saved: ' + e.message); return; }
+        handlers.ready(destination, true);
+      });
+    });
+  }
   function cleanup() {
     var fs = require('fs'), path = require('path');
     try { fs.readdirSync(api.state.folder).forEach(function (name) { if (/\.(part|ytdl|temp|mkv|webm)$/i.test(name) || /\.part-|\.f\d+\.(mp4|m4a|webm|mkv)$/i.test(name)) try { fs.unlinkSync(path.join(api.state.folder, name)); } catch (e) {} }); } catch (e) {}
   }
   function validate(file) {
     if (!file || !api.exists(file) || api.state.format === 'audio') return !!file;
-    var path = require('path'), probe = api.bin('ffprobe');
-    if (!api.exists(probe) && ffmpeg() && ffmpeg() !== 'ffmpeg') probe = path.join(path.dirname(ffmpeg()), 'ffprobe.exe');
-    if (!api.exists(probe)) { try { if (require('child_process').spawnSync('ffprobe', ['-version'], { timeout: 3000, windowsHide: true }).status === 0) probe = 'ffprobe'; else return true; } catch (e) { return true; } }
+    var probe = ffprobe();
+    if (!probe) return true;
     try { var result = require('child_process').spawnSync(probe, ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file], { timeout: 15000, windowsHide: true }); return result.status === 0 && parseFloat(String(result.stdout)) > 0; } catch (e) { return false; }
   }
   function friendlyError(log) {
@@ -133,7 +175,7 @@
   }
 
   api.media = {
-    ffmpeg: ffmpeg, ytdlp: ytdlp, extensions: finalExtensions,
+    ffmpeg: ffmpeg, ytdlp: ytdlp, extensions: finalExtensions, prepareForImport: prepareForImport,
     verifyCookies: function (done) {
       var args = cookieArguments();
       if (!args.length) { done(false, 'Select a browser or cookie file first.'); return; }
