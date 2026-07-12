@@ -1,0 +1,12 @@
+{
+  "name": "bunbun-media",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Premiere Pro media workflow extension",
+  "scripts": {
+    "test": "node tests/timecode.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,64 @@
+name: Bug report
+description: Report a reproducible problem with BunBun Media
+title: "[Bug]: "
+labels: [bug, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting a problem. Never attach browser cookies, credentials, private URLs, or unsanitized logs.
+  - type: input
+    id: version
+    attributes:
+      label: BunBun Media version
+      placeholder: 2.0.0
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Windows and Premiere versions
+      placeholder: Windows 11 24H2; Premiere Pro 25.3
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What happened, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: dropdown
+    id: public
+    attributes:
+      label: Does a public video reproduce the issue?
+      options:
+        - "Yes"
+        - "No"
+        - "Not tested"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized technical output
+      description: Remove usernames, paths, cookies, account data, and private URLs. Use `<redacted>` where needed.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I searched existing issues for this problem.
+          required: true
+        - label: I removed credentials, cookies, private URLs, and personal information.
+          required: true

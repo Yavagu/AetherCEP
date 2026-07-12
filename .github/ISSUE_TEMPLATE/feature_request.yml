@@ -1,0 +1,30 @@
+name: Feature request
+description: Suggest an improvement to BunBun Media
+title: "[Feature]: "
+labels: [enhancement, needs-triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or workflow
+      description: What is difficult today, and who does it affect?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the desired behavior, not only the UI.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: legal
+    attributes:
+      label: Scope check
+      options:
+        - label: This request does not seek to bypass access controls, DRM, or platform restrictions.
+          required: true

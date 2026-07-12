@@ -1,0 +1,130 @@
+/* global require, navigator, BunBunMedia */
+(function (api) {
+  'use strict';
+  var historyKey = 'bunbunmedia.activity.v2', convertTimer = null, activeDownload = null;
+
+  function setProgress(percent, text) {
+    if (percent !== null && percent !== undefined) { api.byId('progress-bar').style.width = Math.max(0, Math.min(100, percent)) + '%'; api.byId('progress-value').textContent = Math.round(percent) + '%'; }
+    if (text) api.byId('progress-label').textContent = text;
+  }
+  function stopTicker() { if (convertTimer) { clearInterval(convertTimer); convertTimer = null; } api.byId('progress-bar').classList.remove('pulse'); }
+  function startTicker() {
+    if (convertTimer) return; var started = Date.now(); api.byId('progress-bar').classList.add('pulse');
+    convertTimer = setInterval(function () { var elapsed = Math.floor((Date.now() - started) / 1000); api.byId('progress-label').textContent = 'Processing with ffmpeg — ' + Math.floor(elapsed / 60) + ':' + ('0' + elapsed % 60).slice(-2); api.byId('progress-value').textContent = '…'; }, 1000);
+  }
+  function setDownloadBusy(busy) {
+    var button = api.byId('download');
+    button.disabled = busy;
+    var title = button.querySelector('.download-button-copy b');
+    var detail = button.querySelector('.download-button-copy small');
+    if (title) title.textContent = busy ? 'Downloading media' : 'Download media';
+    if (detail) detail.textContent = busy ? 'Keep Premiere open while processing' : 'Ready to process';
+    api.byId('cancel-download').disabled = !busy;
+  }
+  function copyOutput() {
+    var output = api.byId('progress-log').textContent, button = api.byId('copy-output');
+    if (!output) return;
+    function done(ok) { api.status(ok ? 'Command output copied. Include it when reporting a problem.' : 'Could not copy the command output. Select it from Technical details instead.', ok ? 'success' : 'error'); if (ok) { button.textContent = 'Copied'; setTimeout(function () { button.textContent = 'Copy command output'; }, 1600); } }
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(output).then(function () { done(true); }).catch(function () { done(false); }); return; }
+    var field = document.createElement('textarea'); field.value = output; field.style.position = 'fixed'; field.style.opacity = '0'; document.body.appendChild(field); field.select();
+    try { done(document.execCommand('copy')); } catch (e) { done(false); }
+    document.body.removeChild(field);
+  }
+  function history() { try { return JSON.parse(localStorage.getItem(historyKey) || '[]'); } catch (e) { return []; } }
+  function addHistory(url, outcome, detail) {
+    var entries = history(); entries.unshift({ url: url, format: api.state.format, outcome: outcome, detail: detail, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
+    localStorage.setItem(historyKey, JSON.stringify(entries.slice(0, 5))); renderHistory();
+  }
+  function renderHistory() {
+    var node = api.byId('history'), entries = history(); node.innerHTML = '';
+    if (!entries.length) { node.innerHTML = '<div class="empty-state compact-empty"><b>No recent activity</b></div>'; return; }
+    entries.forEach(function (entry) {
+      var item = document.createElement('div'); item.className = 'list-item';
+      item.innerHTML = '<span class="activity-mark ' + (entry.outcome === 'success' ? 'ok' : 'fail') + '">' + (entry.outcome === 'success' ? '✓' : '×') + '</span><div class="item-body"><div class="item-title">' + api.escapeHtml(entry.url.replace(/^https?:\/\/(www\.)?youtube\.com\/watch\?v=/, 'youtu.be/')) + '</div><div class="item-detail">' + api.escapeHtml(entry.detail) + '</div></div><small>' + api.escapeHtml(entry.time) + '</small>';
+      node.appendChild(item);
+    });
+  }
+  function importMedia(file, timeline) {
+    api.hostCall(timeline ? 'importAndAddToTimeline' : 'importToBin', file, function (result) {
+      api.status(result === 'true' ? (timeline ? 'Imported to the timeline.' : 'Added to the project bin.') : 'Import failed: ' + result, result === 'true' ? 'success' : 'error');
+    });
+  }
+  function renderLibrary() {
+    var fs = require('fs'), path = require('path'), node = api.byId('library'); node.innerHTML = '';
+    if (!api.state.folder || !fs.existsSync(api.state.folder)) { node.innerHTML = '<div class="empty-state"><span>!</span><b>Destination unavailable</b><small>Choose another download folder.</small></div>'; return; }
+    try {
+      var files = fs.readdirSync(api.state.folder).filter(function (name) { return api.media.extensions.some(function (ext) { return name.toLowerCase().endsWith(ext); }); });
+      files.sort(function (a, b) { return fs.statSync(path.join(api.state.folder, b)).mtimeMs - fs.statSync(path.join(api.state.folder, a)).mtimeMs; });
+      if (!files.length) { node.innerHTML = '<div class="empty-state"><span>▱</span><b>No downloaded media</b><small>Your completed files will appear here.</small></div>'; return; }
+      files.forEach(function (name) {
+        var file = path.join(api.state.folder, name), size = 0; try { size = fs.statSync(file).size / 1048576; } catch (e) {}
+        var item = document.createElement('div'); item.className = 'list-item';
+        var audio = /\.(mp3|m4a)$/i.test(name);
+        item.innerHTML = '<span class="media-type ' + (audio ? 'audio' : 'video') + '">' + (audio ? 'A' : 'V') + '</span><div class="item-body"><div class="item-title" title="' + api.escapeHtml(name) + '">' + api.escapeHtml(name) + '</div><div class="item-detail">' + size.toFixed(1) + ' MB · ' + api.escapeHtml(require('path').extname(name).slice(1).toUpperCase()) + '</div></div>';
+        var actions = document.createElement('div'); actions.className = 'item-actions';
+        var timeline = document.createElement('button'); timeline.textContent = 'Timeline'; timeline.title = 'Add to active timeline'; timeline.addEventListener('click', function () { importMedia(file, true); });
+        var bin = document.createElement('button'); bin.textContent = 'Project'; bin.title = 'Add to project bin'; bin.addEventListener('click', function () { importMedia(file, false); });
+        actions.appendChild(timeline); actions.appendChild(bin); item.appendChild(actions); node.appendChild(item);
+      });
+    } catch (e) { node.innerHTML = '<div class="empty-state"><span>!</span><b>Could not read destination</b><small>' + api.escapeHtml(e.message) + '</small></div>'; }
+  }
+  function cookieGuide() {
+    var source = api.byId('cookies').value, node = api.byId('cookie-help');
+    node.className = 'inline-notice';
+    api.show('check-cookies', !!source && (source !== '__file__' || !!api.state.cookieFile));
+    if (!source) { api.show('cookie-help', false); return; }
+    api.show('cookie-help', true);
+    if (source !== '__file__') { node.textContent = 'Click Check to verify that yt-dlp can read your ' + source + ' YouTube session.'; return; }
+    node.innerHTML = '<b>Cookie-file sign-in:</b> export YouTube cookies in Netscape cookies.txt format, then select the file.' + (api.state.cookieFile ? '<div class="ok">✓ ' + api.escapeHtml(api.state.cookieFile) + '</div>' : '');
+    var extension = document.createElement('button'); extension.textContent = 'Cookie exporter'; extension.addEventListener('click', function () { api.cs.openURLInDefaultBrowser('https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc'); });
+    var youtube = document.createElement('button'); youtube.textContent = 'Open YouTube'; youtube.addEventListener('click', function () { api.cs.openURLInDefaultBrowser('https://www.youtube.com'); });
+    var pick = document.createElement('button'); pick.textContent = 'Select cookies.txt'; pick.addEventListener('click', function () { api.hostCall('browseForCookieFile', '', function (result) { if (result && result !== 'null') { api.state.cookieFile = result; cookieGuide(); } }); });
+    node.appendChild(extension); node.appendChild(youtube); node.appendChild(pick);
+  }
+  function updateDownloader() {
+    var notice = api.byId('update-notice'); api.show('update-notice', true); notice.textContent = 'Updating yt-dlp…';
+    api.media.update(function (ok) { notice.textContent = ok ? '✓ Downloader is up to date.' : '⚠ Could not update yt-dlp. Run yt-dlp -U manually.'; if (ok) setTimeout(function () { api.show('update-notice', false); }, 4000); });
+  }
+  function beginDownload() {
+    var raw = api.byId('video-url').value.trim();
+    if (!raw) { api.status('Enter a YouTube URL.', 'error'); return; } if (!api.validUrl(raw)) { api.status('That is not a supported YouTube URL.', 'error'); return; }
+    var section = null;
+    if (api.byId('timestamp-enabled').checked) {
+      section = api.timecode.range(api.byId('timestamp-start').value, api.byId('timestamp-end').value, api.byId('precise-cuts').checked);
+      if (section.error) { api.status(section.error, 'error'); return; }
+      if (!api.media.ffmpeg()) { api.status('Timestamp downloads require ffmpeg. Run Setup.bat to restore the bundled ffmpeg tools.', 'error'); return; }
+    }
+    if (api.state.format === 'video+audio' && !api.media.ffmpeg()) api.status('ffmpeg is missing; only a pre-merged fallback may work. Run Setup.bat to restore full quality.', 'error'); else api.status('', '');
+    api.show('result', false); api.show('progress', true); api.byId('progress-log').textContent = ''; document.querySelector('.process-details').open = true; setDownloadBusy(true); setProgress(0, section ? 'Preparing clip ' + section.label + '…' : 'Starting download…');
+    api.byId('copy-output').disabled = false;
+    activeDownload = api.media.download(raw, api.byId('quality').value, section, {
+      command: function (line) { var log = api.byId('progress-log'); log.textContent += (log.textContent ? '\n\n' : '') + '$ ' + line + '\n'; log.scrollTop = log.scrollHeight; },
+      output: function (text, pct) { var log = api.byId('progress-log'); log.textContent += text; log.scrollTop = log.scrollHeight; if (/\[Merger\]|\[VideoConvertor\]|\[ExtractAudio\]/.test(text)) startTicker(); else if (pct !== null) setProgress(pct, 'Downloading…'); },
+      retry: function (message) { stopTicker(); setProgress(0, message); },
+      error: function (message) { stopTicker(); setDownloadBusy(false); api.show('progress', false); api.status(message, 'error'); addHistory(raw, 'error', (section ? section.label + ' • ' : '') + message); renderLibrary(); },
+      cancelled: function () { activeDownload = null; stopTicker(); setDownloadBusy(false); setProgress(0, 'Download cancelled'); api.show('progress', false); api.status('Download cancelled. Incomplete files were removed.', 'info'); addHistory(raw, 'error', 'Download cancelled'); renderLibrary(); },
+      success: function (file, resolution) {
+        stopTicker(); api.state.latest = file; setDownloadBusy(false); setProgress(100, 'Download complete');
+        var path = require('path'), fs = require('fs'), mb = (fs.statSync(file).size / 1048576).toFixed(1);
+        api.byId('result-name').textContent = path.basename(file); api.byId('result-meta').textContent = mb + ' MB • ' + api.state.format.replace('+', ' + ') + (section ? ' • ' + section.label : '') + ' • ' + path.dirname(file); api.show('result', true); api.status((section ? 'Timestamped clip ' + section.label : 'Download') + ' complete' + (resolution ? ' (' + resolution + ')' : '') + '.', 'success'); api.byId('video-url').value = ''; addHistory(raw, 'success', (section ? 'Clip ' + section.label + ' • ' : '') + (resolution ? 'Downloaded at ' + resolution : 'Downloaded successfully')); renderLibrary(); setTimeout(function () { api.show('progress', false); }, 700);
+      }
+    });
+  }
+  function bindEvents() {
+    api.byId('formats').addEventListener('click', function (event) { var button = event.target.closest('.format'); if (!button) return; Array.prototype.forEach.call(document.querySelectorAll('.format'), function (node) { node.classList.remove('selected'); node.setAttribute('aria-checked', 'false'); }); button.classList.add('selected'); button.setAttribute('aria-checked', 'true'); api.state.format = button.getAttribute('data-format'); });
+    api.byId('clear-url').addEventListener('click', function () { api.byId('video-url').value = ''; api.byId('video-url').focus(); api.status('', ''); });
+    api.byId('paste-url').addEventListener('click', function () { var input = api.byId('video-url'); if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (text) { input.value = text.trim(); }).catch(function () { input.value = ''; input.focus(); api.status('Press Ctrl+V to paste.', 'info'); }); else { input.value = ''; input.focus(); api.status('Press Ctrl+V to paste.', 'info'); } });
+    api.byId('cookies').addEventListener('change', cookieGuide); api.byId('check-cookies').addEventListener('click', function () { var node = api.byId('cookie-help'); node.textContent = 'Checking account access…'; api.media.verifyCookies(function (ok, message) { node.className = 'inline-notice ' + (ok ? 'ok' : 'fail'); node.textContent = (ok ? '✓ ' : '× ') + message; }); });
+    api.byId('timestamp-enabled').addEventListener('change', function () { api.show('timestamp-options', this.checked); if (this.checked) api.byId('timestamp-start').focus(); });
+    api.byId('browse-folder').addEventListener('click', function () { api.hostCall('browseForFolder', '', function (result) { if (result && result !== 'null') { api.state.folder = result; api.byId('folder').textContent = result; renderLibrary(); } }); });
+    api.byId('download').addEventListener('click', beginDownload); api.byId('cancel-download').addEventListener('click', function () { if (activeDownload) { api.byId('cancel-download').disabled = true; setProgress(null, 'Stopping download...'); activeDownload.cancel(); } }); api.byId('copy-output').addEventListener('click', copyOutput); api.byId('import-latest').addEventListener('click', function () { if (api.state.latest) importMedia(api.state.latest, true); });
+    api.byId('refresh-library').addEventListener('click', renderLibrary); api.byId('clear-history').addEventListener('click', function () { localStorage.removeItem(historyKey); renderHistory(); });
+  }
+  var initialized = false;
+  function initialize() {
+    if (!initialized) { api.state.folder = api.defaultFolder(); api.byId('folder').textContent = api.state.folder; bindEvents(); initialized = true; }
+    renderHistory(); renderLibrary();
+    api.media.checkUpdate(function (outdated) { if (outdated) updateDownloader(); });
+  }
+  initialize();
+})(BunBunMedia);
