@@ -3,14 +3,34 @@ param(
     [Parameter(Mandatory = $true)][string]$ExpectedSha256,
     [Parameter(Mandatory = $true)][string]$Destination,
     [Parameter(Mandatory = $true)][string]$Version,
-    [Parameter(Mandatory = $true)][string]$LogFile
+    [Parameter(Mandatory = $true)][string]$LogFile,
+    [Parameter(Mandatory = $true)][string]$StateFile
 )
 
 $ErrorActionPreference = 'Stop'
 
 function Write-UpdateLog([string]$Message) {
+    $logFolder = Split-Path -Parent $LogFile
+    if ($logFolder -and -not (Test-Path -LiteralPath $logFolder)) { New-Item -Path $logFolder -ItemType Directory -Force | Out-Null }
     $line = "$(Get-Date -Format o) $Message"
     Add-Content -LiteralPath $LogFile -Value $line -Encoding UTF8
+}
+
+function Write-UpdateState([string]$Status, [string]$Message) {
+    $stateFolder = Split-Path -Parent $StateFile
+    if ($stateFolder -and -not (Test-Path -LiteralPath $stateFolder)) { New-Item -Path $stateFolder -ItemType Directory -Force | Out-Null }
+    $state = [ordered]@{
+        version = $Version
+        status = $Status
+        package = $Package
+        digest = $ExpectedSha256.ToLowerInvariant()
+        message = $Message
+        log = $LogFile
+        updatedAt = (Get-Date).ToUniversalTime().ToString('o')
+    }
+    $temporary = "$StateFile.tmp-$PID"
+    $state | ConvertTo-Json | Set-Content -LiteralPath $temporary -Encoding UTF8
+    Move-Item -LiteralPath $temporary -Destination $StateFile -Force
 }
 
 function Test-ArchivePaths([string]$Archive, [string]$Root) {
@@ -29,6 +49,7 @@ function Test-ArchivePaths([string]$Archive, [string]$Root) {
 
 try {
     Write-UpdateLog "Starting BunBun Media $Version update."
+    Write-UpdateState 'waiting' 'Waiting for Premiere Pro to close.'
     $packagePath = [IO.Path]::GetFullPath($Package)
     $destinationPath = [IO.Path]::GetFullPath($Destination)
     $expectedRoot = [IO.Path]::GetFullPath((Join-Path $env:APPDATA 'Adobe\CEP\extensions\BunBunMedia'))
@@ -41,6 +62,9 @@ try {
 
     Write-UpdateLog 'Waiting for Premiere Pro to close.'
     while (Get-Process -Name 'Adobe Premiere Pro' -ErrorAction SilentlyContinue) { Start-Sleep -Seconds 2 }
+
+    Write-UpdateState 'installing' 'Premiere Pro is closed; installing the update.'
+    Write-UpdateLog 'Premiere Pro is closed; beginning installation.'
 
     $workRoot = Join-Path $env:TEMP ("BunBunMediaInstall-" + [Guid]::NewGuid().ToString('N'))
     $staging = Join-Path $workRoot 'staging'
@@ -71,6 +95,7 @@ try {
         Move-Item -LiteralPath $staging -Destination $destinationPath
         if (-not (Test-Path -LiteralPath (Join-Path $destinationPath 'CSXS\manifest.xml'))) { throw 'Installed manifest verification failed.' }
         Write-UpdateLog "BunBun Media $Version installed successfully."
+        Write-UpdateState 'installed' "BunBun Media $Version installed successfully."
         if (Test-Path -LiteralPath $backup) { Remove-Item -LiteralPath $backup -Recurse -Force }
     } catch {
         Write-UpdateLog "Install failed; restoring backup: $($_.Exception.Message)"
@@ -81,7 +106,9 @@ try {
         if (Test-Path -LiteralPath $workRoot) { Remove-Item -LiteralPath $workRoot -Recurse -Force -ErrorAction SilentlyContinue }
     }
 } catch {
-    Write-UpdateLog "ERROR: $($_.Exception.Message)"
+    $message = $_.Exception.Message
+    try { Write-UpdateLog "ERROR: $message" } catch {}
+    try { Write-UpdateState 'failed' $message } catch {}
     exit 1
 }
 

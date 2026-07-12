@@ -38,7 +38,9 @@ Panel UI (HTML/CSS + js/app.js)
 
 `version.json` is the canonical installed version. `js/version.js` provides dependency-free semantic version comparison, while `js/updater.js` checks the repository's latest stable GitHub Release, downloads the matching update asset into `%TEMP%`, and validates SHA-256 before enabling installation.
 
-`updater/Update.ps1` runs outside CEP. It waits for Premiere to close, rejects archive traversal paths, extracts into staging, verifies required files and versions, preserves installed runtime tools, and swaps the staged directory into place. The previous installation is kept as a temporary backup and restored if the swap fails.
+`js/update-state.js` persists the updater handoff under the user's temporary directory. The panel records verified downloads, confirms that the external helper started, and restores waiting, failure, or success details on the next launch instead of downloading the same release again.
+
+`updater/Update.ps1` is copied outside the installed extension before launch so it remains available while the extension directory is replaced. It writes durable waiting, installing, installed, and failed states plus an append-only log; waits for Premiere to close; rejects archive traversal paths; extracts into staging; verifies required files and versions; preserves installed runtime tools; and swaps the staged directory into place. The previous installation is kept as a temporary backup and restored if the swap fails.
 
 ## Trust boundaries
 
