@@ -34,6 +34,12 @@ Panel UI (HTML/CSS + js/app.js)
 
 `CSXS/manifest.xml` declares Premiere 13.0+ and enables CEP's Node runtime. `Setup.ps1` enables the required per-user debug flags and copies the release contents into Adobe's per-user CEP extension directory.
 
+## Extension updates
+
+`version.json` is the canonical installed version. `js/version.js` provides dependency-free semantic version comparison, while `js/updater.js` checks the repository's latest stable GitHub Release, downloads the matching update asset into `%TEMP%`, and validates SHA-256 before enabling installation.
+
+`updater/Update.ps1` runs outside CEP. It waits for Premiere to close, rejects archive traversal paths, extracts into staging, verifies required files and versions, preserves installed runtime tools, and swaps the staged directory into place. The previous installation is kept as a temporary backup and restored if the swap fails.
+
 ## Trust boundaries
 
 URLs, filesystem paths, yt-dlp output, browser cookies, and imported files are untrusted inputs. Keep process invocation shell-free, escape text placed into HTML, pass host values through JSON serialization, avoid logging secrets, and validate completed output before import.

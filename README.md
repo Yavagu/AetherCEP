@@ -80,6 +80,12 @@ Setup.ps1      graphical Windows installer
 - Do not include cookie files, session data, personal paths, or private media URLs.
 - Report vulnerabilities according to [SECURITY.md](SECURITY.md), not in a public issue.
 
+## Automatic updates
+
+Installed copies check the latest stable GitHub Release in the background at most once every 12 hours. When a newer version is available, BunBun Media downloads the versioned update package, verifies its SHA-256 digest, and offers **Update & restart**. Save the Premiere project and close Premiere to allow the external updater to stage the new version. Installed media tools are preserved, and a failed installation is rolled back automatically.
+
+Automatic updates work only for copies installed at `%APPDATA%\Adobe\CEP\extensions\BunBunMedia`. Development working trees are never replaced. See the [development guide](docs/DEVELOPMENT.md#publishing-an-automatic-update) for the release process.
+
 ## Releases and third-party software
 
 Release archives may include yt-dlp, Deno, FFmpeg, ffprobe, and Adobe's CSInterface bridge. Their licenses are independent of this project's licensing. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

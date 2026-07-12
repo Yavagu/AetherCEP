@@ -52,3 +52,28 @@ Get-FileHash .\BunBunMedia.zip -Algorithm SHA256
 ```
 
 GitHub's generated source archives intentionally lack runtime executables and are not end-user installers.
+
+## Publishing an automatic update
+
+Automatic update packages are source/runtime-code updates and deliberately do not contain the large `bin` executables. The installer copies the existing installed tools into the new version before swapping directories.
+
+1. Update `version.json`, `package.json`, both version fields in `CSXS/manifest.xml`, the panel footer, and the bug-report placeholder.
+2. Validate consistency and tests:
+
+   ```powershell
+   npm run verify-version -- 2.0.2
+   npm test
+   ```
+
+3. Commit the release, create the matching tag, and push both:
+
+   ```powershell
+   git tag -a v2.0.2 -m "BunBun Media 2.0.2"
+   git push origin main
+   git push origin v2.0.2
+   ```
+
+4. `.github/workflows/release.yml` checks out the tag, verifies every version field, runs tests, creates `BunBunMedia-update-2.0.2.zip` plus its SHA-256 file, and publishes a GitHub Release.
+5. Confirm both assets appear in the release before announcing it.
+
+Do not move or recreate a published version tag. Publish a new patch version when a release needs correction. Drafts and prereleases are not offered to stable users by the latest-release endpoint.

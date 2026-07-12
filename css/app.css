@@ -405,6 +405,12 @@ svg {
 .list-item > small { color: var(--text-muted); font-size: 8px; }
 
 .update-notice { border-color: rgba(232,183,95,.24); background: rgba(232,183,95,.08); color: #dfbd7c; }
+.extension-update { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.extension-update > span { min-width: 160px; flex: 1; }
+.extension-update button { padding: 5px 8px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface-raised); color: var(--text-secondary); font-size: 9px; font-weight: 700; cursor: pointer; }
+.extension-update button:first-of-type { border-color: var(--accent); background: var(--accent); color: white; }
+.extension-update.error { border-color: rgba(239,106,114,.3); background: var(--danger-soft); color: #f59ba1; }
+.extension-update.ready { border-color: rgba(81,200,120,.3); background: var(--success-soft); color: #95dda9; }
 .app-footer { display: flex; justify-content: space-between; margin-top: 20px; padding-top: 11px; border-top: 1px solid var(--border); color: #505866; font-size: 8px; letter-spacing: .3px; text-transform: uppercase; }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
