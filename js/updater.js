@@ -1,10 +1,9 @@
 /* global require, process, BunBunMedia */
 (function (api) {
   'use strict';
-  var CHECK_INTERVAL = 12 * 60 * 60 * 1000;
   var LAST_CHECK_KEY = 'bunbunmedia.extensionUpdate.lastCheck';
   var SKIPPED_KEY = 'bunbunmedia.extensionUpdate.skippedVersion';
-  var config;
+  var config, footerAction;
 
   function readConfig() {
     if (config) return config;
@@ -69,6 +68,14 @@
     });
   }
 
+  function footer(message, state, action) {
+    var button = api.byId('check-extension-update');
+    if (!button) return;
+    button.textContent = message;
+    button.className = state || '';
+    footerAction = action || null;
+  }
+
   function launchInstaller(zip, digest, version) {
     var path = require('path'), os = require('os'), child = require('child_process');
     var expectedRoot = path.join(process.env.APPDATA || '', 'Adobe', 'CEP', 'extensions', 'BunBunMedia');
@@ -81,6 +88,7 @@
     try {
       var proc = child.spawn('powershell.exe', args, { detached: true, stdio: 'ignore', windowsHide: true }); proc.unref();
       notice('Updater is ready. Save your project and close Premiere Pro to install ' + version + '.', [], 'ready');
+      footer('Close Premiere to finish update', 'update-ready');
     } catch (e) { notice('Could not start the updater: ' + e.message, [], 'error'); }
   }
 
@@ -91,6 +99,7 @@
     var folder = path.join(os.tmpdir(), 'BunBunMediaUpdate', version), zip = path.join(folder, zipName), checksum = path.join(folder, zipName + '.sha256');
     try { if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true }); } catch (e) { notice('Could not create the update staging folder.', [], 'error'); return; }
     notice('Downloading BunBun Media ' + version + '… 0%', [], 'downloading');
+    footer('Downloading update', '');
     download(zipAsset.browser_download_url, zip, function (percent) { notice('Downloading BunBun Media ' + version + '… ' + percent + '%', [], 'downloading'); }, function (zipError) {
       if (zipError) { notice('Update download failed: ' + zipError.message, [{ label: 'Retry', click: function () { prepare(release, version); } }], 'error'); return; }
       function verify(checksumText) {
@@ -98,9 +107,10 @@
         if (!expected) { try { fs.unlinkSync(zip); } catch (e) {} notice('Update rejected: the release has no SHA-256 digest.', [], 'error'); return; }
         try { actual = sha256(zip); } catch (e) { notice('Could not verify the downloaded update.', [], 'error'); return; }
         if (actual !== expected) { try { fs.unlinkSync(zip); } catch (e) {} notice('Update rejected: checksum verification failed.', [], 'error'); return; }
+        footer('An update is ready to Install', 'update-ready', function () { launchInstaller(zip, expected, version); });
         notice('BunBun Media ' + version + ' is downloaded and verified.', [
           { label: 'Update & restart', click: function () { launchInstaller(zip, expected, version); } },
-          { label: 'Later', click: function () { localStorage.setItem(SKIPPED_KEY, version); api.show('update-notice', false); } }
+          { label: 'Later', click: function () { localStorage.setItem(SKIPPED_KEY, version); footer('Check for updates', ''); api.show('update-notice', false); } }
         ], 'ready');
       }
       if (zipAsset.digest) { verify(''); return; }
@@ -113,18 +123,20 @@
   }
 
   function check(force) {
-    var current = readConfig(), last = parseInt(localStorage.getItem(LAST_CHECK_KEY) || '0', 10);
-    if (!force && Date.now() - last < CHECK_INTERVAL) return;
+    var current = readConfig();
+    footer('Checking for updates…', '');
     localStorage.setItem(LAST_CHECK_KEY, String(Date.now()));
     requestJson('https://api.github.com/repos/' + current.repository + '/releases/latest', function (error, release) {
-      if (error) { if (force) notice('Could not check for updates: ' + error.message, [], 'error'); return; }
+      if (error) { footer('Check for updates', 'update-error'); if (force) notice('Could not check for updates: ' + error.message, [], 'error'); return; }
       var version = String(release.tag_name || '').replace(/^v/i, '');
-      if (!api.versioning.valid(version) || api.versioning.compare(version, current.version) <= 0) { if (force) notice('BunBun Media is up to date.', [], 'ready'); return; }
-      if (!force && localStorage.getItem(SKIPPED_KEY) === version) return;
+      if (!api.versioning.valid(version) || api.versioning.compare(version, current.version) <= 0) { footer('You are on Latest Version', ''); if (force) notice('BunBun Media is up to date.', [], 'ready'); return; }
+      if (!force && localStorage.getItem(SKIPPED_KEY) === version) { footer('Check for updates', ''); return; }
       prepare(release, version);
     });
   }
 
   api.extensionUpdater = { check: check, version: function () { return readConfig().version; } };
-  setTimeout(function () { check(false); }, 2500);
+  var footerButton = api.byId('check-extension-update');
+  if (footerButton) footerButton.addEventListener('click', function () { if (footerAction) footerAction(); else check(true); });
+  setTimeout(function () { check(false); }, 1200);
 })(BunBunMedia);

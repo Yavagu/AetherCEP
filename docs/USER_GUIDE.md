@@ -55,7 +55,7 @@ Open a project before importing. Open or create a sequence with at least one vid
 - `Diagnose.bat` shows available formats and simulates format selection for a URL.
 - `FixCache.bat` clears matching CEP caches. Close Premiere before running it.
 - The panel checks for a newer yt-dlp release and can update the installed executable.
-- BunBun Media checks for a newer stable extension release at most once every 12 hours. It downloads and verifies updates in the background, then asks you to save your work and close Premiere before installation.
+- BunBun Media checks for a newer stable extension release each time the panel starts in Premiere. The footer reports whether the installed version is current and can be selected to check again manually. It downloads and verifies updates in the background, then asks you to save your work and close Premiere before installation.
 - `UNINSTALL.bat` removes only `%APPDATA%\Adobe\CEP\extensions\BunBunMedia`. Downloads and Premiere project files are not removed.
 
 ### Installing an automatic update

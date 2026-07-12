@@ -82,7 +82,7 @@ Setup.ps1      graphical Windows installer
 
 ## Automatic updates
 
-Installed copies check the latest stable GitHub Release in the background at most once every 12 hours. When a newer version is available, BunBun Media downloads the versioned update package, verifies its SHA-256 digest, and offers **Update & restart**. Save the Premiere project and close Premiere to allow the external updater to stage the new version. Installed media tools are preserved, and a failed installation is rolled back automatically.
+Installed copies check the latest stable GitHub Release in the background whenever the panel starts in Premiere. The footer shows the current update state and also provides a manual check. When a newer version is available, BunBun Media downloads the versioned update package, verifies its SHA-256 digest, and offers **Update & restart**. Save the Premiere project and close Premiere to allow the external updater to stage the new version. Installed media tools are preserved, and a failed installation is rolled back automatically.
 
 Automatic updates work only for copies installed at `%APPDATA%\Adobe\CEP\extensions\BunBunMedia`. Development working trees are never replaced. See the [development guide](docs/DEVELOPMENT.md#publishing-an-automatic-update) for the release process.
 

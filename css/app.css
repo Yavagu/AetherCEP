@@ -418,6 +418,12 @@ svg {
 .extension-update.error { border-color: rgba(239,106,114,.3); background: var(--danger-soft); color: #f59ba1; }
 .extension-update.ready { border-color: rgba(81,200,120,.3); background: var(--success-soft); color: #95dda9; }
 .app-footer { display: flex; justify-content: space-between; margin-top: 20px; padding-top: 11px; border-top: 1px solid var(--border); color: #505866; font-size: 8px; letter-spacing: .3px; text-transform: uppercase; }
+.footer-update-line { display: inline-flex; align-items: center; justify-content: flex-end; gap: 5px; min-width: 0; }
+.footer-update-line button { min-width: 0; padding: 2px 0; overflow: hidden; border: 0; background: transparent; color: var(--text-muted); text-overflow: ellipsis; white-space: nowrap; font-size: inherit; font-weight: 700; letter-spacing: inherit; text-transform: uppercase; cursor: pointer; }
+.footer-update-line button:hover { color: var(--accent-bright); }
+.footer-update-line button.update-ready { color: var(--success); }
+.footer-update-line button.update-error { color: var(--danger); }
+.footer-update-line i { font-style: normal; }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -533,5 +539,6 @@ body { min-width: 280px; background: linear-gradient(90deg,transparent,rgba(255,
 .app-footer { align-items: center; color: #666; }
 .app-footer span:first-child { display: flex; align-items: center; gap: 6px; color: #818181; }
 .app-footer b { display: grid; place-items: center; width: 17px; height: 17px; border: 1px solid #3f8eda; border-radius: 2px; background: #0c2033; color: #54a3ee; font-size: 7px; text-transform: none; }
+.app-footer .footer-update-line { color: #666; }
 @media (min-width: 680px) { .library-section,.activity-section { width: calc(50% - 5px); display: inline-block; vertical-align: top; } .activity-section { margin-left: 6px; } }
 @media (max-width: 520px) { .app-shell { padding: 0 12px 14px; } .app-header { margin-right: -12px; margin-left: -12px; padding-right: 12px; padding-left: 12px; } .app-header::after { right: 12px; left: 12px; } .workflow-strip b { display: none; } }
