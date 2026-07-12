@@ -4,7 +4,8 @@
 
   function read(file) {
     try {
-      var value = JSON.parse(require('fs').readFileSync(file, 'utf8'));
+      var text = require('fs').readFileSync(file, 'utf8').replace(/^\uFEFF/, '');
+      var value = JSON.parse(text);
       return value && typeof value === 'object' ? value : null;
     } catch (e) { return null; }
   }

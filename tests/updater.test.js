@@ -34,6 +34,9 @@ try {
   updaterState.write(stateFile, waiting);
   assert.strictEqual(updaterState.read(stateFile).status, 'waiting');
 
+  fs.writeFileSync(stateFile, '\uFEFF' + JSON.stringify(waiting), 'utf8');
+  assert.strictEqual(updaterState.read(stateFile).status, 'waiting');
+
   fs.writeFileSync(stateFile, '{broken', 'utf8');
   assert.strictEqual(updaterState.read(stateFile), null);
   updaterState.clear(stateFile);
