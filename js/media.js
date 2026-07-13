@@ -196,7 +196,13 @@
   }
   function cleanup() {
     var fs = require('fs'), path = require('path');
-    try { fs.readdirSync(api.state.folder).forEach(function (name) { if (/\.(part|ytdl|temp|mkv|webm)$/i.test(name) || /\.part-|\.f\d+\.(mp4|m4a|webm|mkv)$/i.test(name)) try { fs.unlinkSync(path.join(api.state.folder, name)); } catch (e) {} }); } catch (e) {}
+    try {
+      fs.readdirSync(api.state.folder).forEach(function (name) {
+        if (/\.(?:part|ytdl|temp)$/i.test(name) || /\.part-|\.f\d+\.(?:mp4|m4a|webm|mkv)$/i.test(name)) {
+          try { fs.unlinkSync(path.join(api.state.folder, name)); } catch (e) {}
+        }
+      });
+    } catch (e) {}
   }
   function validate(file) {
     if (!file || !api.exists(file) || api.state.format === 'audio') return !!file;
@@ -241,15 +247,21 @@
       var args = cookieArguments();
       if (!args.length) { done(false, 'Select a browser or cookie file first.'); return; }
       args = args.concat(['--simulate', '--no-warnings', '--no-playlist', 'https://www.youtube.com/watch?v=aqz-KE-bpKQ']);
-      var log = '', proc = require('child_process').spawn(ytdlp(), args, { windowsHide: true, env: childEnvironment() });
+      var log = '', proc, finished = false;
+      function finish(ok, message) { if (!finished) { finished = true; done(ok, message); } }
+      try { proc = require('child_process').spawn(ytdlp(), args, { windowsHide: true, env: childEnvironment() }); }
+      catch (e) { finish(false, e.message); return; }
       proc.stdout.on('data', function (d) { log += d; }); proc.stderr.on('data', function (d) { log += d; });
-      proc.on('error', function (e) { done(false, e.message); });
-      proc.on('close', function (code) { done(code === 0, code === 0 ? 'YouTube sign-in works.' : friendlyError(log)); });
+      proc.on('error', function (e) { finish(false, e.message); });
+      proc.on('close', function (code) { finish(code === 0, code === 0 ? 'YouTube sign-in works.' : friendlyError(log)); });
     },
     update: function (done) {
-      var proc = require('child_process').spawn(ytdlp(), ['-U'], { windowsHide: true, env: childEnvironment() }), log = '';
+      var proc, log = '', finished = false;
+      function finish(ok, message) { if (!finished) { finished = true; done(ok, message); } }
+      try { proc = require('child_process').spawn(ytdlp(), ['-U'], { windowsHide: true, env: childEnvironment() }); }
+      catch (e) { finish(false, e.message); return; }
       proc.stdout.on('data', function (d) { log += d; }); proc.stderr.on('data', function (d) { log += d; });
-      proc.on('error', function (e) { done(false, e.message); }); proc.on('close', function (code) { done(code === 0, log.trim()); });
+      proc.on('error', function (e) { finish(false, e.message); }); proc.on('close', function (code) { finish(code === 0, log.trim()); });
     },
     checkUpdate: function (done) {
       try {
@@ -276,14 +288,17 @@
       }
       function run(args, options) {
         if (cancelled) return;
-        var executable = ytdlp(), log = '', resolution = '';
+        var executable = ytdlp(), log = '', resolution = '', finished = false, proc;
         if (handlers.command) handlers.command(commandLine(executable, args));
-        var proc = require('child_process').spawn(executable, args, { windowsHide: true, env: childEnvironment() });
+        try { proc = require('child_process').spawn(executable, args, { windowsHide: true, env: childEnvironment() }); }
+        catch (e) { handlers.error('Could not start yt-dlp: ' + e.message); return; }
         currentProcess = proc;
         proc.stdout.on('data', consume); proc.stderr.on('data', consume);
         function consume(data) { if (cancelled) return; var text = data.toString(); log += text; var pct = text.match(/(\d+(?:\.\d+)?)%/); var res = text.match(/(?:\d{3,4}x)?(\d{3,4})p?\b/); if (res) resolution = res[1] + 'p'; handlers.output(text, pct ? parseFloat(pct[1]) : null); }
-        proc.on('error', function (e) { if (!cancelled) handlers.error('Could not start yt-dlp: ' + e.message); });
+        proc.on('error', function (e) { if (!cancelled && !finished) { finished = true; handlers.error('Could not start yt-dlp: ' + e.message); } });
         proc.on('close', function (code) {
+          if (finished) return;
+          finished = true;
           if (cancelled) { cleanup(); return; }
           if (code !== 0 && options.cookies && /dpapi|failed to decrypt|could not copy.*cookie/i.test(log)) { handlers.retry('Sign-in failed; retrying as public video…'); run(removeCookieArguments(args), { cookies: false, format: options.format, age: true }); return; }
           if (code !== 0 && options.format && /403|forbidden|requested format|format is not available|fragment/i.test(log)) { handlers.retry('Selected stream failed; trying a compatible format…'); run(argumentsFor(url, quality, true, section), { cookies: false, format: false, age: false }); return; }

@@ -42,12 +42,8 @@ Normal cuts begin near a source keyframe. Enable **Precise cuts** for closer bou
 
 Include BunBun Media version, Windows version, Premiere version, expected and actual behavior, exact reproduction steps, whether a public URL reproduces the issue, and sanitized technical output. Screenshots should hide account and filesystem details.
 
-## An extension update fails
+## The extension update check fails
 
-- Confirm the release contains `BunBunMedia-update-VERSION.zip` and its `.sha256` file.
-- Save the project and close every Premiere Pro process after selecting **Update & restart**.
-- Review `%TEMP%\BunBunMedia-update.log` for the exact failure.
-- Run `Setup.bat` from a full release package if the update helper is missing.
-- Automatic updates only install into `%APPDATA%\Adobe\CEP\extensions\BunBunMedia`.
-
-Checksum or unsafe-archive errors are intentionally not bypassed. Download the release again or wait for a corrected release.
+- Confirm that GitHub is reachable in your browser and select **Check for updates** again.
+- Open the [BunBun Media Releases page](https://github.com/xosmos01-cyber/BunBunMedia/releases) directly if the panel cannot query GitHub.
+- Download the latest full ZIP and run `Setup.bat`; the panel does not install extension updates automatically.

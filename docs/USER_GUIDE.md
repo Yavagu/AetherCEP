@@ -56,17 +56,13 @@ Open a project before importing. Open or create a sequence with at least one vid
 - `Diagnose.bat` shows available formats and simulates format selection for a URL.
 - `FixCache.bat` clears matching CEP caches. Close Premiere before running it.
 - The panel checks for a newer yt-dlp release and can update the installed executable.
-- BunBun Media checks for a newer stable extension release each time the panel starts in Premiere. The footer reports whether the installed version is current and can be selected to check again manually. It downloads and verifies updates in the background, then asks you to save your work and close Premiere before installation.
+- BunBun Media checks for a newer stable extension release each time the panel starts in Premiere. Select **Check for updates** in the footer to check manually.
 - `UNINSTALL.bat` removes only `%APPDATA%\Adobe\CEP\extensions\BunBunMedia`. Downloads and Premiere project files are not removed.
 
-### Installing an automatic update
+### Downloading an extension update
 
-1. Wait until the update notice says the package is downloaded and verified.
-2. Select **Update & restart**.
-3. Save the active Premiere project and close Premiere Pro completely.
-4. The external updater replaces the extension and preserves the installed `bin` tools.
-5. Reopen Premiere and the BunBun Media panel.
+When a newer version is available, select **Download update ZIP** in the update notice. This opens the BunBun Media Releases page in your browser. Download the latest full ZIP, extract it, run `Setup.bat`, and restart Premiere Pro.
 
-The update log is written to `%TEMP%\BunBunMedia-update.log`. If installation fails, the updater restores the previous extension automatically. Automatic installation is disabled when the panel is running from a development folder rather than the standard CEP installation path.
+The panel only checks the version and opens GitHub. It does not download or install extension files in the background.
 
 For errors and recovery steps, see [Troubleshooting](TROUBLESHOOTING.md).

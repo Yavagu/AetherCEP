@@ -343,7 +343,10 @@ svg {
 .process-card { background: var(--surface-raised); }
 .process-header, .process-header > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .process-header b { font-size: 10px; }
-.process-header > span { color: #b9b2ff; font: 10px Consolas, monospace; }
+.process-header-actions > span { color: #b9b2ff; font: 10px Consolas, monospace; }
+.close-progress-button { display: grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: var(--text-muted); font-size: 15px; line-height: 1; }
+.close-progress-button:hover:not(:disabled) { border-color: var(--border-strong); background: var(--surface-hover); color: var(--text); }
+.close-progress-button:disabled { opacity: .35; cursor: default; }
 .processing-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-bright); box-shadow: 0 0 0 4px rgba(124,109,242,.1); animation: statusPulse 1.4s ease-in-out infinite; }
 @keyframes statusPulse { 50% { opacity: .35; } }
 .progress-track { height: 5px; margin-top: 11px; overflow: hidden; border-radius: 999px; background: #101217; }

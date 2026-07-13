@@ -80,11 +80,11 @@ Setup.ps1      graphical Windows installer
 - Do not include cookie files, session data, personal paths, or private media URLs.
 - Report vulnerabilities according to [SECURITY.md](SECURITY.md), not in a public issue.
 
-## Automatic updates
+## Update checks
 
-Installed copies check the latest stable GitHub Release in the background whenever the panel starts in Premiere. The footer shows the current update state and also provides a manual check. When a newer version is available, BunBun Media downloads the versioned update package, verifies its SHA-256 digest, and offers **Update & restart**. Save the Premiere project and close Premiere to allow the external updater to stage the new version. Installed media tools are preserved, and a failed installation is rolled back automatically.
+BunBun Media checks the latest stable GitHub Release whenever the panel starts in Premiere. The footer also provides a manual **Check for updates** action. When a newer version is available, the panel displays its version and provides a button that opens the [GitHub Releases page](https://github.com/xosmos01-cyber/BunBunMedia/releases).
 
-Automatic updates work only for copies installed at `%APPDATA%\Adobe\CEP\extensions\BunBunMedia`. Development working trees are never replaced. See the [development guide](docs/DEVELOPMENT.md#publishing-an-automatic-update) for the release process.
+The panel does not download, install, or execute extension updates. Download the latest full release package from GitHub and run `Setup.bat` to update the installed extension.
 
 ## Releases and third-party software
 

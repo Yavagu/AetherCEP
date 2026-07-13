@@ -25,6 +25,12 @@
     if (title) title.textContent = busy ? 'Downloading media' : 'Download media';
     if (detail) detail.textContent = busy ? 'Keep Premiere open while processing' : 'Ready to process';
     api.byId('cancel-download').disabled = !busy;
+    api.byId('close-progress').disabled = busy;
+  }
+  function dismissReportForNewSource() {
+    if (activeDownload) return;
+    api.show('progress', false);
+    api.show('result', false);
   }
   function copyOutput() {
     var output = api.byId('progress-log').textContent, button = api.byId('copy-output');
@@ -143,25 +149,25 @@
       command: function (line) { var log = api.byId('progress-log'); log.textContent += (log.textContent ? '\n\n' : '') + '$ ' + line + '\n'; log.scrollTop = log.scrollHeight; },
       output: function (text, pct) { var log = api.byId('progress-log'); log.textContent += text; log.scrollTop = log.scrollHeight; if (/\[Merger\]|\[VideoConvertor\]|\[ExtractAudio\]/.test(text)) startTicker(); else if (pct !== null) setProgress(pct, 'Downloading…'); },
       retry: function (message) { stopTicker(); setProgress(0, message); },
-      error: function (message) { stopTicker(); setDownloadBusy(false); api.show('progress', false); api.status(message, 'error'); addHistory(raw, 'error', (section ? section.label + ' • ' : '') + message); renderLibrary(); },
-      cancelled: function () { activeDownload = null; stopTicker(); setDownloadBusy(false); setProgress(0, 'Download cancelled'); api.show('progress', false); api.status('Download cancelled. Incomplete files were removed.', 'info'); addHistory(raw, 'error', 'Download cancelled'); renderLibrary(); },
+      error: function (message) { activeDownload = null; stopTicker(); setDownloadBusy(false); setProgress(null, 'Download failed'); api.byId('progress-value').textContent = 'Error'; api.status(message, 'error'); addHistory(raw, 'error', (section ? section.label + ' • ' : '') + message); renderLibrary(); },
+      cancelled: function () { activeDownload = null; stopTicker(); setDownloadBusy(false); setProgress(0, 'Download cancelled'); api.byId('progress-value').textContent = 'Cancelled'; api.status('Download cancelled. Incomplete files were removed.', 'info'); addHistory(raw, 'error', 'Download cancelled'); renderLibrary(); },
       success: function (file, resolution) {
-        stopTicker(); api.state.latest = file; setDownloadBusy(false); setProgress(100, 'Download complete');
+        activeDownload = null; stopTicker(); api.state.latest = file; setDownloadBusy(false); setProgress(100, 'Download complete');
         var path = require('path'), fs = require('fs'), mb = (fs.statSync(file).size / 1048576).toFixed(1);
-        api.byId('result-name').textContent = path.basename(file); api.byId('result-meta').textContent = mb + ' MB • ' + api.state.format.replace('+', ' + ') + (section ? ' • ' + section.label : '') + ' • ' + path.dirname(file); api.show('result', true); api.status((section ? 'Timestamped clip ' + section.label : 'Download') + ' complete' + (resolution ? ' (' + resolution + ')' : '') + '.', 'success'); addHistory(raw, 'success', (section ? 'Clip ' + section.label + ' • ' : '') + (resolution ? 'Downloaded at ' + resolution : 'Downloaded successfully')); renderLibrary(); setTimeout(function () { api.show('progress', false); }, 700);
+        api.byId('result-name').textContent = path.basename(file); api.byId('result-meta').textContent = mb + ' MB • ' + api.state.format.replace('+', ' + ') + (section ? ' • ' + section.label : '') + ' • ' + path.dirname(file); api.show('result', true); api.status((section ? 'Timestamped clip ' + section.label : 'Download') + ' complete' + (resolution ? ' (' + resolution + ')' : '') + '.', 'success'); addHistory(raw, 'success', (section ? 'Clip ' + section.label + ' • ' : '') + (resolution ? 'Downloaded at ' + resolution : 'Downloaded successfully')); renderLibrary();
       }
     });
   }
   function bindEvents() {
     api.byId('formats').addEventListener('click', function (event) { var button = event.target.closest('.format'); if (!button) return; Array.prototype.forEach.call(document.querySelectorAll('.format'), function (node) { node.classList.remove('selected'); node.setAttribute('aria-checked', 'false'); }); button.classList.add('selected'); button.setAttribute('aria-checked', 'true'); api.state.format = button.getAttribute('data-format'); });
     api.byId('refresh-formats').addEventListener('click', refreshFormats);
-    api.byId('video-url').addEventListener('input', function () { saveUrl(this.value); clearSourceFormats(); });
-    api.byId('clear-url').addEventListener('click', function () { api.byId('video-url').value = ''; saveUrl(''); clearSourceFormats(); api.byId('video-url').focus(); api.status('', ''); });
-    api.byId('paste-url').addEventListener('click', function () { var input = api.byId('video-url'); if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (text) { input.value = text.trim(); saveUrl(input.value); clearSourceFormats(); }).catch(function () { input.focus(); api.status('Press Ctrl+V to paste.', 'info'); }); else { input.focus(); api.status('Press Ctrl+V to paste.', 'info'); } });
+    api.byId('video-url').addEventListener('input', function () { saveUrl(this.value); clearSourceFormats(); dismissReportForNewSource(); });
+    api.byId('clear-url').addEventListener('click', function () { api.byId('video-url').value = ''; saveUrl(''); clearSourceFormats(); dismissReportForNewSource(); api.byId('video-url').focus(); api.status('', ''); });
+    api.byId('paste-url').addEventListener('click', function () { var input = api.byId('video-url'); if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (text) { input.value = text.trim(); saveUrl(input.value); clearSourceFormats(); dismissReportForNewSource(); }).catch(function () { input.focus(); api.status('Press Ctrl+V to paste.', 'info'); }); else { input.focus(); api.status('Press Ctrl+V to paste.', 'info'); } });
     api.byId('cookies').addEventListener('change', function () { clearSourceFormats(); cookieGuide(); }); api.byId('check-cookies').addEventListener('click', function () { var node = api.byId('cookie-help'); node.textContent = 'Checking account access…'; api.media.verifyCookies(function (ok, message) { node.className = 'inline-notice ' + (ok ? 'ok' : 'fail'); node.textContent = (ok ? '✓ ' : '× ') + message; }); });
     api.byId('timestamp-enabled').addEventListener('change', function () { api.show('timestamp-options', this.checked); if (this.checked) api.byId('timestamp-start').focus(); });
     api.byId('browse-folder').addEventListener('click', function () { api.hostCall('browseForFolder', '', function (result) { if (result && result !== 'null') { api.state.folder = result; api.byId('folder').textContent = result; renderLibrary(); } }); });
-    api.byId('download').addEventListener('click', beginDownload); api.byId('cancel-download').addEventListener('click', function () { if (activeDownload) { api.byId('cancel-download').disabled = true; setProgress(null, 'Stopping download...'); activeDownload.cancel(); } }); api.byId('copy-output').addEventListener('click', copyOutput); api.byId('import-latest').addEventListener('click', function () { if (api.state.latest) importMedia(api.state.latest, true); });
+    api.byId('download').addEventListener('click', beginDownload); api.byId('cancel-download').addEventListener('click', function () { if (activeDownload) { api.byId('cancel-download').disabled = true; setProgress(null, 'Stopping download...'); activeDownload.cancel(); } }); api.byId('close-progress').addEventListener('click', function () { if (!activeDownload) api.show('progress', false); }); api.byId('copy-output').addEventListener('click', copyOutput); api.byId('import-latest').addEventListener('click', function () { if (api.state.latest) importMedia(api.state.latest, true); });
     api.byId('refresh-library').addEventListener('click', renderLibrary); api.byId('clear-history').addEventListener('click', function () { localStorage.removeItem(historyKey); renderHistory(); });
   }
   var initialized = false;

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ExtensionManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ExtensionBundleId="com.bunbunmedia" ExtensionBundleName="BunBun Media" ExtensionBundleVersion="2.0.8" Version="10.0">
-  <ExtensionList><Extension Id="com.bunbunmedia.panel" Version="2.0.8"/></ExtensionList>
+<ExtensionManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ExtensionBundleId="com.bunbunmedia" ExtensionBundleName="BunBun Media" ExtensionBundleVersion="2.0.9" Version="10.0">
+  <ExtensionList><Extension Id="com.bunbunmedia.panel" Version="2.0.9"/></ExtensionList>
   <ExecutionEnvironment>
     <HostList><Host Name="PPRO" Version="[13.0,99.9]"/></HostList>
     <LocaleList><Locale Code="All"/></LocaleList>
