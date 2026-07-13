@@ -4,6 +4,8 @@
 
 [![Adobe CEP](https://img.shields.io/badge/Adobe-CEP-purple?style=flat-square&logo=adobe)](https://adobe.com)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow?style=flat-square&logo=javascript)](https://developer.mozilla.org/)
+[![yt-dlp](https://img.shields.io/badge/yt--dlp-Video--Downloader-red?style=flat-square&logo=youtube&logoColor=white)](https://github.com/yt-dlp/yt-dlp)
+[![FFmpeg](https://img.shields.io/badge/FFmpeg-Media--Processing-007800?style=flat-square&logo=ffmpeg&logoColor=white)](https://ffmpeg.org)
 [![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen?style=flat-square)](./tests)
 
 <p>A lightweight Adobe CEP extension panel designed to automate media workflows, handle timecode tracking, and simplify asset management within your creative suite.</p>
@@ -14,10 +16,6 @@
 
 ---
 </div>
-
-# BunBun Media
-
-BunBun Media is a Windows extension for Adobe Premiere Pro that downloads permitted YouTube media, creates timestamped clips, and sends finished files directly to a Premiere project or timeline.
 
 > [!IMPORTANT]
 > Download only media you own or are authorized to use. You are responsible for complying with YouTube's terms and applicable copyright law.
