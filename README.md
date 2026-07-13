@@ -8,10 +8,12 @@
 [![FFmpeg](https://img.shields.io/badge/FFmpeg-Media--Processing-007800?style=flat-square&logo=ffmpeg&logoColor=white)](https://ffmpeg.org)
 [![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen?style=flat-square)](./tests)
 
-<p>A lightweight Adobe CEP extension panel designed to automate media workflows, handle timecode tracking, and simplify asset management within your creative suite.</p>
+<p>A lightweight Adobe CEP extension panel designed to automate media workflows, handle timecode tracking, download web assets, and simplify asset management within your creative suite.</p>
 
 <p align="center">
-  <img src="Preview.png" alt="BunBunMedia Preview" width="100%">
+  <a href="Preview.png" target="_blank">
+    <img src="Preview.png" alt="BunBunMedia Preview" width="250" style="border-radius: 8px;">
+  </a>
 </p>
 
 ---
