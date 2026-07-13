@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="Preview.png" target="_blank">
-    <img src="Preview.png" alt="BunBunMedia Preview" width="250" style="border-radius: 8px;">
+    <img src="Preview.png" alt="BunBunMedia Preview" width="480" style="border-radius: 8px;">
   </a>
 </p>
 
