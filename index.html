@@ -72,16 +72,24 @@
 
       <div class="settings-grid">
         <div class="field-group">
-          <label for="quality">Quality</label>
+          <div class="field-label-row">
+            <label for="quality">Quality</label>
+            <button id="refresh-formats" class="field-refresh-button" type="button" title="Load formats available for this URL" aria-label="Refresh formats available for this URL">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/></svg>
+              <span>Refresh</span>
+            </button>
+          </div>
           <div class="select-wrap">
             <select id="quality">
-              <option value="best">Best compatible · 1080p</option>
-              <option value="2160">Ultra HD · 2160p</option>
-              <option value="1440">Quad HD · 1440p</option>
-              <option value="1080">Full HD · 1080p</option>
-              <option value="720">HD · 720p</option>
-              <option value="480">SD · 480p</option>
-              <option value="360">Low · 360p</option>
+              <optgroup label="Built-in presets">
+                <option value="best">Best compatible · 1080p</option>
+                <option value="2160">Ultra HD · 2160p</option>
+                <option value="1440">Quad HD · 1440p</option>
+                <option value="1080">Full HD · 1080p</option>
+                <option value="720">HD · 720p</option>
+                <option value="480">SD · 480p</option>
+                <option value="360">Low · 360p</option>
+              </optgroup>
             </select>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
           </div>
@@ -226,7 +234,7 @@
 
     <footer class="app-footer">
       <span>BunBun Media</span>
-      <span class="footer-update-line"><button id="check-extension-update" type="button">Check for updates</button><i aria-hidden="true">·</i><span>v2.0.7 · CEP</span></span>
+      <span class="footer-update-line"><button id="check-extension-update" type="button">Check for updates</button><i aria-hidden="true">·</i><span>v2.0.8 · CEP</span></span>
     </footer>
   </main>
 

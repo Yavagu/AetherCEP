@@ -44,10 +44,43 @@
     if (source === '__file__' && api.state.cookieFile) return ['--cookies', api.state.cookieFile];
     return source && source !== '__file__' ? ['--cookies-from-browser', source] : [];
   }
+  function sourceFormat(quality) {
+    var value = String(quality || ''), match = value.match(/^source-(video|audio|mixed):(.+)$/);
+    if (match) return { kind: match[1], id: match[2] };
+    return value.indexOf('source:') === 0 ? { kind: 'mixed', id: value.slice(7) } : null;
+  }
+  function parseFormats(output) {
+    var lines = String(output || '').replace(/\x1b\[[0-9;]*m/g, '').split(/\r?\n/), formats = [], inTable = false;
+    lines.forEach(function (line) {
+      if (/^\s*ID\s+EXT\s+RESOLUTION\b/.test(line)) { inTable = true; return; }
+      if (!inTable) return;
+      var match = line.trim().match(/^(\S+)\s+(\S+)\s+(.+)$/);
+      if (!match || /^[-─]+$/.test(match[1]) || /^\[/.test(match[1])) return;
+      var description = match[3].replace(/\s*[│|]\s*/g, ' · ').replace(/\s+/g, ' ').trim(), lower = description.toLowerCase();
+      var resolution = description.match(/\b(\d{2,5})x(\d{2,5})\b/), bitrate = description.match(/\b(\d+(?:\.\d+)?)k\b/);
+      formats.push({
+        id: match[1], ext: match[2], description: description,
+        kind: /video only/.test(lower) ? 'video' : (/audio only/.test(lower) ? 'audio' : 'mixed'),
+        resolution: resolution ? resolution[1] + ' × ' + resolution[2] : '',
+        bitrate: bitrate ? bitrate[1] + ' kbps' : ''
+      });
+    });
+    return formats;
+  }
+  function formatLabel(format) {
+    var parts = [], container = String(format.ext || '').toUpperCase();
+    if (format.kind === 'audio') parts.push('Audio only');
+    else if (format.kind === 'video') { if (format.resolution) parts.push(format.resolution); parts.push('Video only'); }
+    else { if (format.resolution) parts.push(format.resolution); else parts.push('Source format ' + format.id); }
+    if (format.bitrate) parts.push(format.bitrate);
+    if (container) parts.push(container);
+    return parts.join(' · ');
+  }
   function argumentsFor(url, quality, fallback, section) {
     var path = require('path'), args = ['--no-playlist', '--newline', '--windows-filenames', '--no-overwrites', '--retries', '3', '--fragment-retries', '3', '--socket-timeout', '30'];
     if (api.byId('verbose').checked) args.push('-v');
-    var maximum = quality === 'best' ? 1080 : parseInt(quality, 10);
+    var source = sourceFormat(quality), exactFormat = source && source.id;
+    var maximum = quality === 'best' || source ? 1080 : parseInt(quality, 10);
     var cap = '[height<=' + maximum + ']';
     var highResolution = quality === '1440' || quality === '2160';
     var recode = 'VideoConvertor:-c:v libx264 -preset medium -crf 16 -pix_fmt yuv420p -c:a aac -b:a 320k';
@@ -56,7 +89,18 @@
       args.push('--download-sections', section.argument, '--live-from-start');
       if (section.precise) args.push('--force-keyframes-at-cuts');
     }
-    if (fallback && api.state.format !== 'audio') {
+    if (exactFormat && !fallback) {
+      if (api.state.format === 'video+audio' && source.kind === 'video') {
+        args.push('-f', exactFormat + '+bestaudio[ext=m4a]/' + exactFormat + '+bestaudio/' + exactFormat, '--merge-output-format', 'mp4');
+      } else if (api.state.format === 'video+audio' && source.kind === 'audio') {
+        args.push('-f', 'bestvideo+' + exactFormat + '/best+' + exactFormat + '/' + exactFormat, '--merge-output-format', 'mp4');
+      } else if (api.state.format === 'audio' && source.kind === 'video') {
+        args.push('-f', 'bestaudio[ext=m4a]/bestaudio');
+      } else {
+        args.push('-f', exactFormat);
+      }
+      if (api.state.format === 'audio' && ffmpeg()) args.push('-x', '--audio-format', 'mp3', '--audio-quality', '0');
+    } else if (fallback && api.state.format !== 'audio') {
       if (ffmpeg()) args.push('-f', 'bestvideo[vcodec^=avc1]' + cap + '+bestaudio[ext=m4a]/bestvideo' + cap + '+bestaudio/best' + cap, '-S', 'res,vcodec:h264,acodec:aac,br', '--merge-output-format', 'mp4');
       else args.push('-f', 'best[ext=mp4]' + cap + '/best' + cap, '-S', 'res,vcodec:h264,br');
     } else if (api.state.format === 'audio') {
@@ -168,6 +212,7 @@
     if (/country|region/.test(t) && /blocked|available/.test(t)) return 'This video is not available in your country.';
     if (/members.only/.test(t)) return 'This is a members-only video.';
     if (/removed|video unavailable/.test(t)) return 'This video is unavailable or has been removed.';
+    if (/empty media response|checking post accessibility/.test(t)) return 'This post is not publicly accessible. Select a browser session or cookies.txt, then try again.';
     if (/429|too many requests/.test(t)) return 'YouTube rate-limited the request. Wait a few minutes and retry.';
     if (/ffmpeg/.test(t) && /not found|missing/.test(t)) return 'ffmpeg is missing. Run Setup.bat again.';
     if (/sign in|login/.test(t)) return 'YouTube requires sign-in for this video.';
@@ -175,7 +220,23 @@
   }
 
   api.media = {
-    ffmpeg: ffmpeg, ytdlp: ytdlp, extensions: finalExtensions, prepareForImport: prepareForImport,
+    ffmpeg: ffmpeg, ytdlp: ytdlp, extensions: finalExtensions, prepareForImport: prepareForImport, parseFormats: parseFormats, formatLabel: formatLabel,
+    listFormats: function (rawUrl, done) {
+      var isYouTube = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/|youtu\.be\/)/i.test(String(rawUrl).trim());
+      var id = api.videoId(rawUrl), url = isYouTube && id ? 'https://www.youtube.com/watch?v=' + id : rawUrl;
+      var args = ['--no-playlist', '--no-warnings', '--no-color', '--socket-timeout', '30', '--list-formats'].concat(cookieArguments(), [url]);
+      var log = '', finished = false, proc;
+      function finish(ok, formats, message) { if (finished) return; finished = true; done(ok, formats || [], message || ''); }
+      try { proc = require('child_process').spawn(ytdlp(), args, { windowsHide: true, env: childEnvironment() }); }
+      catch (e) { finish(false, [], 'Could not start yt-dlp: ' + e.message); return; }
+      proc.stdout.on('data', function (d) { log += d.toString(); }); proc.stderr.on('data', function (d) { log += d.toString(); });
+      proc.on('error', function (e) { finish(false, [], 'Could not start yt-dlp: ' + e.message); });
+      proc.on('close', function (code) {
+        if (code !== 0) { finish(false, [], friendlyError(log)); return; }
+        var formats = parseFormats(log);
+        finish(!!formats.length, formats, formats.length ? '' : 'yt-dlp did not report any downloadable formats for this URL.');
+      });
+    },
     verifyCookies: function (done) {
       var args = cookieArguments();
       if (!args.length) { done(false, 'Select a browser or cookie file first.'); return; }

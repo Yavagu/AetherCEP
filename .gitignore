@@ -1,5 +1,6 @@
 # Release artifacts and third-party executables
-BunBunMedia.zip
+BunBunMedia*.zip
+BunBunMedia*.sha256
 bin/*.exe
 
 # Credentials and local configuration

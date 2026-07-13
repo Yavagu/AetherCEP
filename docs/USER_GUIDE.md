@@ -11,6 +11,7 @@ The installer places the extension at `%APPDATA%\Adobe\CEP\extensions\BunBunMedi
 1. Paste one YouTube video, Short, or livestream URL. Playlists are intentionally ignored.
 2. Choose **Video + Audio**, **Audio Only**, or **Video Only**.
 3. Select a maximum resolution. **Best compatible** is capped at 1080p for reliable Premiere compatibility; 1440p and 2160p may require conversion and take longer.
+   To use a source-specific stream, paste the URL and select **Refresh** beside Quality. BunBun Media runs yt-dlp's `--list-formats` query and adds the reported format IDs below the built-in presets. With **Video + Audio** selected, choosing a `video only` or `audio only` entry automatically pairs it with the best complementary stream and merges both into one file using FFmpeg.
 4. Choose the output folder. The initial default is `Desktop\YT Downloads`.
 5. Select **Download media** and keep Premiere open until processing finishes.
 

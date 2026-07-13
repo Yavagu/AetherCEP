@@ -97,6 +97,35 @@
     var notice = api.byId('update-notice'); api.show('update-notice', true); notice.textContent = 'Updating yt-dlp…';
     api.media.update(function (ok) { notice.textContent = ok ? '✓ Downloader is up to date.' : '⚠ Could not update yt-dlp. Run yt-dlp -U manually.'; if (ok) setTimeout(function () { api.show('update-notice', false); }, 4000); });
   }
+  function clearSourceFormats() {
+    var select = api.byId('quality'), group = select.querySelector('optgroup[data-source-formats]');
+    if (group) select.removeChild(group);
+    if (String(select.value).indexOf('source') === 0) select.value = 'best';
+  }
+  function refreshFormats() {
+    var raw = api.byId('video-url').value.trim(), button = api.byId('refresh-formats'), select = api.byId('quality');
+    if (!raw) { api.status('Paste a media URL before refreshing formats.', 'error'); api.byId('video-url').focus(); return; }
+    if (!api.validUrl(raw)) { api.status('That is not a supported media URL.', 'error'); return; }
+    button.disabled = true; button.classList.add('loading'); button.querySelector('span').textContent = 'Loading';
+    api.status('Reading formats available for this URL…', 'info');
+    api.media.listFormats(raw, function (ok, formats, message) {
+      button.disabled = false; button.classList.remove('loading'); button.querySelector('span').textContent = 'Refresh';
+      if (!ok) { api.status(message || 'Could not load formats for this URL.', 'error'); return; }
+      var previous = select.value, existing = select.querySelector('optgroup[data-source-formats]');
+      if (existing) select.removeChild(existing);
+      var group = document.createElement('optgroup'); group.label = 'Formats available for this URL'; group.setAttribute('data-source-formats', 'true');
+      formats.forEach(function (format) {
+        var option = document.createElement('option');
+        option.value = 'source-' + format.kind + ':' + format.id;
+        option.textContent = api.media.formatLabel(format);
+        option.title = 'Format ' + format.id + ' · ' + format.ext.toUpperCase() + ' · ' + format.description;
+        group.appendChild(option);
+      });
+      select.appendChild(group);
+      if (Array.prototype.some.call(select.options, function (option) { return option.value === previous; })) select.value = previous;
+      api.status('Loaded ' + formats.length + ' formats. They are listed below the built-in quality presets.', 'success');
+    });
+  }
   function beginDownload() {
     var raw = api.byId('video-url').value.trim();
     if (!raw) { api.status('Enter a YouTube URL.', 'error'); return; } if (!api.validUrl(raw)) { api.status('That is not a supported YouTube URL.', 'error'); return; }
@@ -125,10 +154,11 @@
   }
   function bindEvents() {
     api.byId('formats').addEventListener('click', function (event) { var button = event.target.closest('.format'); if (!button) return; Array.prototype.forEach.call(document.querySelectorAll('.format'), function (node) { node.classList.remove('selected'); node.setAttribute('aria-checked', 'false'); }); button.classList.add('selected'); button.setAttribute('aria-checked', 'true'); api.state.format = button.getAttribute('data-format'); });
-    api.byId('video-url').addEventListener('input', function () { saveUrl(this.value); });
-    api.byId('clear-url').addEventListener('click', function () { api.byId('video-url').value = ''; saveUrl(''); api.byId('video-url').focus(); api.status('', ''); });
-    api.byId('paste-url').addEventListener('click', function () { var input = api.byId('video-url'); if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (text) { input.value = text.trim(); saveUrl(input.value); }).catch(function () { input.focus(); api.status('Press Ctrl+V to paste.', 'info'); }); else { input.focus(); api.status('Press Ctrl+V to paste.', 'info'); } });
-    api.byId('cookies').addEventListener('change', cookieGuide); api.byId('check-cookies').addEventListener('click', function () { var node = api.byId('cookie-help'); node.textContent = 'Checking account access…'; api.media.verifyCookies(function (ok, message) { node.className = 'inline-notice ' + (ok ? 'ok' : 'fail'); node.textContent = (ok ? '✓ ' : '× ') + message; }); });
+    api.byId('refresh-formats').addEventListener('click', refreshFormats);
+    api.byId('video-url').addEventListener('input', function () { saveUrl(this.value); clearSourceFormats(); });
+    api.byId('clear-url').addEventListener('click', function () { api.byId('video-url').value = ''; saveUrl(''); clearSourceFormats(); api.byId('video-url').focus(); api.status('', ''); });
+    api.byId('paste-url').addEventListener('click', function () { var input = api.byId('video-url'); if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (text) { input.value = text.trim(); saveUrl(input.value); clearSourceFormats(); }).catch(function () { input.focus(); api.status('Press Ctrl+V to paste.', 'info'); }); else { input.focus(); api.status('Press Ctrl+V to paste.', 'info'); } });
+    api.byId('cookies').addEventListener('change', function () { clearSourceFormats(); cookieGuide(); }); api.byId('check-cookies').addEventListener('click', function () { var node = api.byId('cookie-help'); node.textContent = 'Checking account access…'; api.media.verifyCookies(function (ok, message) { node.className = 'inline-notice ' + (ok ? 'ok' : 'fail'); node.textContent = (ok ? '✓ ' : '× ') + message; }); });
     api.byId('timestamp-enabled').addEventListener('change', function () { api.show('timestamp-options', this.checked); if (this.checked) api.byId('timestamp-start').focus(); });
     api.byId('browse-folder').addEventListener('click', function () { api.hostCall('browseForFolder', '', function (result) { if (result && result !== 'null') { api.state.folder = result; api.byId('folder').textContent = result; renderLibrary(); } }); });
     api.byId('download').addEventListener('click', beginDownload); api.byId('cancel-download').addEventListener('click', function () { if (activeDownload) { api.byId('cancel-download').disabled = true; setProgress(null, 'Stopping download...'); activeDownload.cancel(); } }); api.byId('copy-output').addEventListener('click', copyOutput); api.byId('import-latest').addEventListener('click', function () { if (api.state.latest) importMedia(api.state.latest, true); });

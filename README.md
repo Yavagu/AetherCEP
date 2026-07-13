@@ -8,7 +8,7 @@ BunBun Media is a Windows extension for Adobe Premiere Pro that downloads permit
 ## Highlights
 
 - Download video with audio, audio-only MP3, or silent video.
-- Choose from compatible 360p through 2160p formats.
+- Choose from compatible 360p through 2160p presets or refresh the source's exact yt-dlp formats.
 - Cut a section using `SS`, `MM:SS`, or `HH:MM:SS` timestamps.
 - Use browser sessions or a Netscape-format `cookies.txt` for media your account may access.
 - Follow live progress, cancel work, inspect command output, and browse recent downloads.

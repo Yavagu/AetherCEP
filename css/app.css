@@ -238,6 +238,14 @@ svg {
   letter-spacing: .5px;
   text-transform: uppercase;
 }
+.field-label-row { display: flex; align-items: center; justify-content: space-between; min-height: 17px; margin-bottom: 5px; }
+.field-label-row > label { color: var(--text-muted); font-size: 9px; font-weight: 750; letter-spacing: .5px; text-transform: uppercase; }
+.field-refresh-button { display: inline-flex; align-items: center; gap: 3px; padding: 0; border: 0; background: transparent; color: var(--accent-bright); font-size: 8px; font-weight: 700; }
+.field-refresh-button:hover { color: var(--text); }
+.field-refresh-button:disabled { color: var(--text-muted); cursor: wait; }
+.field-refresh-button svg { width: 10px; height: 10px; }
+.field-refresh-button.loading svg { animation: format-refresh-spin .8s linear infinite; }
+@keyframes format-refresh-spin { to { transform: rotate(360deg); } }
 .select-wrap { position: relative; min-width: 0; }
 .select-wrap select {
   width: 100%;
@@ -504,6 +512,7 @@ body { min-width: 280px; background: linear-gradient(90deg,transparent,rgba(255,
 .radio-mark { width: 11px; height: 11px; }
 .format.selected .radio-mark { border: 3px solid var(--accent); }
 .field-group > label { color: #969696; font-size: 8px; letter-spacing: .7px; }
+.field-label-row > label { color: #969696; font-size: 8px; letter-spacing: .7px; }
 .select-wrap select,.time-input { border-color: #424242; border-radius: 3px; background: #191919; color: #cfcfcf; }
 .select-wrap select:hover { border-color: #606060; }
 .select-wrap select:focus,.time-input:focus-within { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
