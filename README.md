@@ -1,5 +1,9 @@
 <div align="center">
 
+<p align="center">
+  <img src="logo.png" alt="AetherCEP Logo" width="140" style="border-radius: 24px;">
+</p>
+
 ### 🎬 AetherCEP: Adobe CEP Media Automation
 
 [![Adobe CEP](https://img.shields.io/badge/Adobe-CEP-purple?style=flat-square&logo=adobe)](https://adobe.com)
