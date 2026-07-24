@@ -1,7 +1,7 @@
 <div align="center">
 
 <p align="center">
-  <img src="logo.png" alt="AetherCEP Logo" width="140" style="border-radius: 24px;">
+  <img src="logo.png" alt="AetherCEP Logo" width="120" style="border-radius: 0px;">
 </p>
 
 ### 🎬 AetherCEP: Adobe CEP Media Automation
