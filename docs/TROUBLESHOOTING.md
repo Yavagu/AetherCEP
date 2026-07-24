@@ -4,7 +4,7 @@
 
 1. Confirm Premiere Pro 2019 or newer is installed.
 2. Run `Setup.bat` again and check that it completes.
-3. Confirm `%APPDATA%\Adobe\CEP\extensions\BunBunMedia\CSXS\manifest.xml` exists.
+3. Confirm `%APPDATA%\Adobe\CEP\extensions\AetherCEP\CSXS\manifest.xml` exists.
 4. Restart Premiere completely, then check **Window > Extensions**.
 5. Close Premiere, run `FixCache.bat`, and reopen it.
 
@@ -25,7 +25,7 @@ Close the browser and retry. If Chromium reports DPAPI or decryption errors, use
 
 ## The requested quality is unavailable
 
-Not every video has every resolution or codec. BunBun Media automatically tries a compatible fallback. Higher resolutions often provide separate audio/video streams and therefore need FFmpeg. Run `Diagnose.bat` to see the formats YouTube currently exposes.
+Not every video has every resolution or codec. AetherCEP automatically tries a compatible fallback. Higher resolutions often provide separate audio/video streams and therefore need FFmpeg. Run `Diagnose.bat` to see the formats YouTube currently exposes.
 
 ## The clip boundary is not exact
 
@@ -40,10 +40,10 @@ Normal cuts begin near a source keyframe. Enable **Precise cuts** for closer bou
 
 ## Collect useful diagnostics
 
-Include BunBun Media version, Windows version, Premiere version, expected and actual behavior, exact reproduction steps, whether a public URL reproduces the issue, and sanitized technical output. Screenshots should hide account and filesystem details.
+Include AetherCEP version, Windows version, Premiere version, expected and actual behavior, exact reproduction steps, whether a public URL reproduces the issue, and sanitized technical output. Screenshots should hide account and filesystem details.
 
 ## The extension update check fails
 
 - Confirm that GitHub is reachable in your browser and select **Check for updates** again.
-- Open the [BunBun Media Releases page](https://github.com/xosmos01-cyber/BunBunMedia/releases) directly if the panel cannot query GitHub.
+- Open the [AetherCEP Releases page](https://github.com/Yavagu/AetherCEP/releases) directly if the panel cannot query GitHub.
 - Download the latest full ZIP and run `Setup.bat`; the panel does not install extension updates automatically.

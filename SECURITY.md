@@ -14,4 +14,4 @@ Never submit real browser cookies, account tokens, private URLs, personal file p
 
 ## Security model
 
-BunBun Media runs inside Adobe CEP with Node.js enabled. It can launch bundled tools, read selected browser cookies, write downloads, and import files into Premiere. Install releases only from this project's GitHub Releases page, review changes when building from source, and keep yt-dlp current.
+AetherCEP runs inside Adobe CEP with Node.js enabled. It can launch bundled tools, read selected browser cookies, write downloads, and import files into Premiere. Install releases only from this project's GitHub Releases page, review changes when building from source, and keep yt-dlp current.

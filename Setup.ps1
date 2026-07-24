@@ -3,7 +3,7 @@ Add-Type -AssemblyName System.Drawing
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 $form = New-Object System.Windows.Forms.Form
-$form.Text = 'BunBun Media - Setup'
+$form.Text = 'AetherCEP - Setup'
 $form.ClientSize = New-Object System.Drawing.Size(520, 470)
 $form.StartPosition = 'CenterScreen'
 $form.FormBorderStyle = 'FixedDialog'
@@ -13,7 +13,7 @@ $form.ForeColor = [Drawing.Color]::Gainsboro
 $form.Font = New-Object Drawing.Font('Segoe UI', 10)
 
 $title = New-Object Windows.Forms.Label
-$title.Text = 'BunBun Media'; $title.Font = New-Object Drawing.Font('Segoe UI', 17, [Drawing.FontStyle]::Bold)
+$title.Text = 'AetherCEP'; $title.Font = New-Object Drawing.Font('Segoe UI', 17, [Drawing.FontStyle]::Bold)
 $title.Location = New-Object Drawing.Point(20, 18); $title.Size = New-Object Drawing.Size(460, 34)
 $form.Controls.Add($title)
 $subtitle = New-Object Windows.Forms.Label
@@ -47,7 +47,12 @@ $button.Add_Click({
     if ($button.Text -eq 'Close') { $form.Close(); return }
     $button.Enabled = $false; $button.Text = 'Installing...'
     $source = $scriptRoot
-    $destination = Join-Path $env:APPDATA 'Adobe\CEP\extensions\BunBunMedia'
+    $destination = Join-Path $env:APPDATA 'Adobe\CEP\extensions\AetherCEP'
+    $oldDestination = Join-Path $env:APPDATA 'Adobe\CEP\extensions\BunBunMedia'
+    if (Test-Path -LiteralPath $oldDestination) {
+        Write-SetupLog 'Removing legacy BunBunMedia installation...'
+        Remove-Item -LiteralPath $oldDestination -Recurse -Force -ErrorAction SilentlyContinue
+    }
     Write-SetupLog 'Enabling unsigned CEP extensions...'
     foreach ($version in 8..15) {
         $key = "HKCU:\Software\Adobe\CSXS.$version"
@@ -68,7 +73,7 @@ $button.Add_Click({
     if (-not (Test-Path -LiteralPath (Join-Path $bin 'deno.exe'))) {
         Write-SetupLog 'Downloading Deno for YouTube format extraction...'
         try {
-            $zip = Join-Path $env:TEMP 'bunbun-media-deno.zip'
+            $zip = Join-Path $env:TEMP 'aether-cep-deno.zip'
             Invoke-WebRequest -Uri 'https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip' -OutFile $zip -UseBasicParsing
             Expand-Archive -LiteralPath $zip -DestinationPath $bin -Force; Remove-Item -LiteralPath $zip -Force
             Write-SetupLog 'Deno installed.'
@@ -79,7 +84,7 @@ $button.Add_Click({
         Write-SetupLog 'Using the packaged ffmpeg and ffprobe.'
     } else { Write-SetupLog 'WARNING: Packaged ffmpeg or ffprobe is missing. Re-download the extension package.' }
     $progress.Value = 100
-    Write-SetupLog ''; Write-SetupLog 'Installation complete. Restart Premiere Pro, then open Window > Extensions > BunBun Media.'
+    Write-SetupLog ''; Write-SetupLog 'Installation complete. Restart Premiere Pro, then open Window > Extensions > AetherCEP.'
     $button.Enabled = $true; $button.Text = 'Close'; $button.BackColor = [Drawing.Color]::FromArgb(45, 140, 75)
 })
 

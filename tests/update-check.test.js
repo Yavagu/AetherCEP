@@ -36,10 +36,10 @@ const api = {
 };
 const localRequire = name => {
   if (name === 'https') return fakeHttps;
-  if (name === 'fs') return { readFileSync: () => JSON.stringify({ version: '2.0.8', repository: 'xosmos01-cyber/BunBunMedia' }) };
+  if (name === 'fs') return { readFileSync: () => JSON.stringify({ version: '2.0.8', repository: 'Yavagu/AetherCEP' }) };
   return require(name);
 };
-const context = { BunBunMedia: api, require: localRequire, document: { createElement: element }, setTimeout: handler => handler() };
+const context = { AetherCEP: api, BunBunMedia: api, require: localRequire, document: { createElement: element }, setTimeout: handler => handler() };
 vm.createContext(context);
 vm.runInContext(fs.readFileSync('js/update-check.js', 'utf8'), context);
 
@@ -51,12 +51,12 @@ assert.strictEqual(footer.textContent, 'Update 2.1.0 available');
 assert.match(notice.children[0].textContent, /2\.1\.0 is available/);
 assert.strictEqual(notice.children[1].textContent, 'Download update ZIP');
 notice.children[1].listeners.click();
-assert.deepStrictEqual(opened, ['https://github.com/xosmos01-cyber/BunBunMedia/releases']);
+assert.deepStrictEqual(opened, ['https://github.com/Yavagu/AetherCEP/releases']);
 
 api.extensionUpdateCheck.check(true);
 responses[1].response.emit('data', Buffer.from(JSON.stringify({ tag_name: 'v2.0.8' })));
 responses[1].response.emit('end');
 assert.strictEqual(footer.textContent, 'You are on Latest Version');
-assert.strictEqual(notice.children[0].textContent, 'BunBun Media is up to date.');
+assert.strictEqual(notice.children[0].textContent, 'AetherCEP is up to date.');
 
 console.log('Update check tests passed');

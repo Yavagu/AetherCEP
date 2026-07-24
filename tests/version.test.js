@@ -5,7 +5,7 @@ const vm = require('vm');
 const context = { window: {} };
 vm.createContext(context);
 vm.runInContext(fs.readFileSync('js/version.js', 'utf8'), context);
-const versioning = context.BunBunMedia.versioning;
+const versioning = (context.AetherCEP || context.BunBunMedia).versioning;
 
 assert.strictEqual(versioning.compare('2.0.1', '2.0.0'), 1);
 assert.strictEqual(versioning.compare('v2.0.1', '2.0.1'), 0);

@@ -1,4 +1,4 @@
-var BunBunMedia = window.BunBunMedia || {};
+var AetherCEP = window.AetherCEP || window.BunBunMedia || {};
 (function (api) {
   'use strict';
   function parts(value) {
@@ -17,4 +17,4 @@ var BunBunMedia = window.BunBunMedia || {};
     },
     valid: function (value) { return !!parts(value); }
   };
-})(BunBunMedia);
+})(AetherCEP);

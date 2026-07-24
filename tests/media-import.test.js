@@ -21,7 +21,7 @@ function loadMedia(spawn, exists) {
   };
   const fakeFs = Object.assign({}, fs, { existsSync: exists, renameSync: () => {}, unlinkSync: () => {} });
   const localRequire = name => name === 'child_process' ? { spawn, spawnSync: () => ({ status: 1 }) } : (name === 'fs' ? fakeFs : require(name));
-  const context = { BunBunMedia: api, require: localRequire, process: { env: {}, platform: 'win32' } };
+  const context = { AetherCEP: api, BunBunMedia: api, require: localRequire, process: { env: {}, platform: 'win32' } };
   vm.createContext(context);
   vm.runInContext(fs.readFileSync('js/media.js', 'utf8'), context);
   return api.media;

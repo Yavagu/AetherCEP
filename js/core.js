@@ -1,5 +1,7 @@
 /* global CSInterface, SystemPath, require, process, __dirname */
-var BunBunMedia = window.BunBunMedia || {};
+var AetherCEP = window.AetherCEP || window.BunBunMedia || {};
+window.AetherCEP = AetherCEP;
+window.BunBunMedia = AetherCEP;
 (function (api) {
   'use strict';
   api.cs = new CSInterface();
@@ -49,4 +51,4 @@ var BunBunMedia = window.BunBunMedia || {};
       return folder;
     } catch (e) { return api.cs.getSystemPath(SystemPath.MY_DOCUMENTS); }
   };
-})(BunBunMedia);
+})(AetherCEP);

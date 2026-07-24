@@ -1,6 +1,6 @@
 <div align="center">
 
-### 🎬 BunBunMedia: Adobe CEP Media Automation
+### 🎬 AetherCEP: Adobe CEP Media Automation
 
 [![Adobe CEP](https://img.shields.io/badge/Adobe-CEP-purple?style=flat-square&logo=adobe)](https://adobe.com)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow?style=flat-square&logo=javascript)](https://developer.mozilla.org/)
@@ -12,12 +12,16 @@
 
 <p align="center">
   <a href="Preview.png" target="_blank">
-    <img src="Preview.png" alt="BunBunMedia Preview" width="480" style="border-radius: 8px;">
+    <img src="Preview.png" alt="AetherCEP Preview" width="480" style="border-radius: 8px;">
   </a>
 </p>
 
 ---
 </div>
+
+# AetherCEP
+
+AetherCEP is a Windows extension for Adobe Premiere Pro that downloads permitted YouTube media, creates timestamped clips, and sends finished files directly to a Premiere project or timeline.
 
 > [!IMPORTANT]
 > Download only media you own or are authorized to use. You are responsible for complying with YouTube's terms and applicable copyright law.
@@ -43,16 +47,16 @@
 
 For most users:
 
-1. Download the latest `BunBunMedia.zip` from the repository's **Releases** page. Do not use GitHub's automatically generated "Source code" archives; they do not contain the runtime tools.
+1. Download the latest `AetherCEP.zip` from the repository's **Releases** page. Do not use GitHub's automatically generated "Source code" archives; they do not contain the runtime tools.
 2. Extract the complete ZIP to a writable folder.
 3. Double-click `Setup.bat` (or `INSTALL.bat`).
 4. Select **Install**, wait for completion, and restart Premiere Pro.
-5. In Premiere, open **Window > Extensions > BunBun Media**.
+5. In Premiere, open **Window > Extensions > AetherCEP**.
 
 The installer enables CEP `PlayerDebugMode` for CSXS 8–15 and copies the extension to:
 
 ```text
-%APPDATA%\Adobe\CEP\extensions\BunBunMedia
+%APPDATA%\Adobe\CEP\extensions\AetherCEP
 ```
 
 See the [user guide](docs/USER_GUIDE.md) for timestamp clips, sign-in options, importing, updates, and uninstall instructions. If the panel does not appear or a download fails, use the [troubleshooting guide](docs/TROUBLESHOOTING.md).
@@ -99,7 +103,7 @@ Setup.ps1      graphical Windows installer
 
 ## Update checks
 
-BunBun Media checks the latest stable GitHub Release whenever the panel starts in Premiere. The footer also provides a manual **Check for updates** action. When a newer version is available, the panel displays its version and provides a button that opens the [GitHub Releases page](https://github.com/xosmos01-cyber/BunBunMedia/releases).
+AetherCEP checks the latest stable GitHub Release whenever the panel starts in Premiere. The footer also provides a manual **Check for updates** action. When a newer version is available, the panel displays its version and provides a button that opens the [GitHub Releases page](https://github.com/Yavagu/AetherCEP/releases).
 
 The panel does not download, install, or execute extension updates. Download the latest full release package from GitHub and run `Setup.bat` to update the installed extension.
 

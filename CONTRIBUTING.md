@@ -1,6 +1,6 @@
-# Contributing to BunBun Media
+# Contributing to AetherCEP
 
-Thanks for helping improve BunBun Media. Small, focused pull requests are easiest to review.
+Thanks for helping improve AetherCEP. Small, focused pull requests are easiest to review.
 
 ## Before you start
 

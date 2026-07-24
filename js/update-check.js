@@ -1,13 +1,13 @@
-/* global require, BunBunMedia */
+/* global require, AetherCEP */
 (function (api) {
   'use strict';
-  var RELEASES_URL = 'https://github.com/xosmos01-cyber/BunBunMedia/releases';
+  var RELEASES_URL = 'https://github.com/Yavagu/AetherCEP/releases';
   var config, availableVersion = '';
 
   function readConfig() {
     if (config) return config;
     try { config = JSON.parse(require('fs').readFileSync(require('path').join(api.root(), 'version.json'), 'utf8'));
-    } catch (e) { config = { version: '0.0.0', repository: 'xosmos01-cyber/BunBunMedia' }; }
+    } catch (e) { config = { version: '0.0.0', repository: 'Yavagu/AetherCEP' }; }
     return config;
   }
 
@@ -20,7 +20,7 @@
       done(error, release);
     }
     var request = https.get('https://api.github.com/repos/' + repository + '/releases/latest', {
-      headers: { 'Accept': 'application/vnd.github+json', 'User-Agent': 'bunbun-media-update-check', 'X-GitHub-Api-Version': '2022-11-28' }
+      headers: { 'Accept': 'application/vnd.github+json', 'User-Agent': 'aether-cep-update-check', 'X-GitHub-Api-Version': '2022-11-28' }
     }, function (response) {
       var body = '';
       if (response.statusCode !== 200) { response.resume(); finish(new Error('GitHub returned HTTP ' + response.statusCode)); return; }
@@ -80,12 +80,12 @@
       }
       if (api.versioning.compare(version, current.version) <= 0) {
         footer('You are on Latest Version', '');
-        if (manual) notice('BunBun Media is up to date.', 'ready', false);
+        if (manual) notice('AetherCEP is up to date.', 'ready', false);
         return;
       }
       availableVersion = version;
       footer('Update ' + version + ' available', 'update-ready');
-      notice('BunBun Media ' + version + ' is available. Download the update from GitHub Releases.', 'ready', true);
+      notice('AetherCEP ' + version + ' is available. Download the update from GitHub Releases.', 'ready', true);
     });
   }
 
@@ -93,4 +93,4 @@
   var footerButton = api.byId('check-extension-update');
   if (footerButton) footerButton.addEventListener('click', function () { if (availableVersion) openReleases(); else check(true); });
   setTimeout(function () { check(false); }, 1200);
-})(BunBunMedia);
+})(AetherCEP);

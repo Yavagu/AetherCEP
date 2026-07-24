@@ -6,6 +6,6 @@ if not errorlevel 1 (
   pause
   exit /b 1
 )
-for /d %%D in ("%LOCALAPPDATA%\Temp\cep_cache\*bunbunmedia*") do rmdir /s /q "%%D"
+for /d %%D in ("%LOCALAPPDATA%\Temp\cep_cache\*aethercep*" "%LOCALAPPDATA%\Temp\cep_cache\*bunbunmedia*") do rmdir /s /q "%%D"
 echo CEP cache cleared.
 pause

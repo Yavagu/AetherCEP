@@ -21,7 +21,7 @@ The test loads `js/timecode.js` into a Node VM and checks valid, invalid, open-e
 
 The normal installer copies the entire directory. Place the runtime executables in `bin\`, then run `Setup.bat`. The installer downloads yt-dlp and Deno when absent, but a complete FFmpeg/ffprobe pair must be bundled or installed separately and discoverable on `PATH`.
 
-After a change, rerun setup or copy the changed source files to `%APPDATA%\Adobe\CEP\extensions\BunBunMedia`. Close Premiere and run `FixCache.bat` if cached panel code persists.
+After a change, rerun setup or copy the changed source files to `%APPDATA%\Adobe\CEP\extensions\AetherCEP`. Close Premiere and run `FixCache.bat` if cached panel code persists.
 
 Useful debugging locations vary by Premiere/CEP version. Enable **Verbose technical output** in the panel for yt-dlp logs. Keep all logs sanitized before sharing.
 
@@ -42,13 +42,13 @@ Useful debugging locations vary by Premiere/CEP version. Enable **Verbose techni
 4. Add current Windows x64 builds named `yt-dlp.exe`, `deno.exe`, `ffmpeg.exe`, and `ffprobe.exe`.
 5. Verify every third-party license and include any required license texts. Update `THIRD_PARTY_NOTICES.md` when components or distributors change.
 6. Scan the staging directory for cookies, downloaded media, logs, personal paths, and secrets.
-7. Create `BunBunMedia.zip`, install from that ZIP on a clean test account, and verify checksums.
+7. Create `AetherCEP.zip`, install from that ZIP on a clean test account, and verify checksums.
 8. Attach the ZIP and a SHA-256 checksum to a GitHub Release. Do not commit the ZIP or executables to normal Git history.
 
 Example checksum command:
 
 ```powershell
-Get-FileHash .\BunBunMedia.zip -Algorithm SHA256
+Get-FileHash .\AetherCEP.zip -Algorithm SHA256
 ```
 
 GitHub's generated source archives intentionally lack runtime executables and are not end-user installers.
@@ -68,12 +68,12 @@ The panel uses the latest stable GitHub Release only to detect that a newer vers
 3. Commit the release, create the matching tag, and push both:
 
    ```powershell
-   git tag -a v2.0.2 -m "BunBun Media 2.0.2"
+   git tag -a v2.0.2 -m "AetherCEP 2.0.2"
    git push origin main
    git push origin v2.0.2
    ```
 
-4. `.github/workflows/release.yml` checks out the tag, verifies every version field, runs tests, creates `BunBunMedia-update-2.0.2.zip` plus its SHA-256 file, and publishes a GitHub Release.
+4. `.github/workflows/release.yml` checks out the tag, verifies every version field, runs tests, creates `AetherCEP-update-2.0.2.zip` plus its SHA-256 file, and publishes a GitHub Release.
 5. Confirm both assets appear in the release before announcing it.
 
 Do not move or recreate a published version tag. Publish a new patch version when a release needs correction. Drafts and prereleases are not offered to stable users by the latest-release endpoint.

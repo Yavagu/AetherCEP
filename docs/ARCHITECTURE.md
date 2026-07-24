@@ -1,6 +1,6 @@
 # Architecture
 
-BunBun Media is an Adobe CEP panel with three execution layers:
+AetherCEP is an Adobe CEP panel with three execution layers:
 
 ```text
 Panel UI (HTML/CSS + js/app.js)

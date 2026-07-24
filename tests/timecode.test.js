@@ -5,7 +5,7 @@ const vm = require('vm');
 const context = { window: {} };
 vm.createContext(context);
 vm.runInContext(fs.readFileSync('js/timecode.js', 'utf8'), context);
-const timecode = context.BunBunMedia.timecode;
+const timecode = (context.AetherCEP || context.BunBunMedia).timecode;
 
 assert.strictEqual(timecode.parse('90'), 90);
 assert.strictEqual(timecode.parse('272'), 272);

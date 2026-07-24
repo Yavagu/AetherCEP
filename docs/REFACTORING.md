@@ -8,7 +8,7 @@ This review keeps the CEP panel's HTML structure, CSS, controls, labels, command
 
 The panel is intentionally dependency-free at runtime. `index.html` loads the CEP bridge, shared utilities, pure timecode/version helpers, the media service, the UI controller, and the extension update check in that order.
 
-User input is validated in `js/core.js`, held in `BunBunMedia.state`, and persisted only for the last URL and five-item activity history. `js/app.js` renders the panel and delegates media work to `js/media.js`. The media service launches yt-dlp and FFmpeg through argument arrays rather than a shell, then reports progress back to the controller. Premiere import and timeline insertion cross the CEP boundary through JSON-encoded `evalScript` arguments and execute in `jsx/main.jsx`.
+User input is validated in `js/core.js`, held in `AetherCEP.state`, and persisted only for the last URL and five-item activity history. `js/app.js` renders the panel and delegates media work to `js/media.js`. The media service launches yt-dlp and FFmpeg through argument arrays rather than a shell, then reports progress back to the controller. Premiere import and timeline insertion cross the CEP boundary through JSON-encoded `evalScript` arguments and execute in `jsx/main.jsx`.
 
 ## Improvements made
 

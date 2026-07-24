@@ -1,4 +1,4 @@
-/* global require, process, BunBunMedia */
+/* global require, process, AetherCEP */
 (function (api) {
   'use strict';
   var ffmpegCache;
@@ -266,7 +266,7 @@
     checkUpdate: function (done) {
       try {
         var current = require('child_process').execFileSync(ytdlp(), ['--version'], { timeout: 5000, windowsHide: true }).toString().trim();
-        require('https').get({ hostname: 'api.github.com', path: '/repos/yt-dlp/yt-dlp/releases/latest', headers: { 'User-Agent': 'bunbun-media' } }, function (response) {
+        require('https').get({ hostname: 'api.github.com', path: '/repos/yt-dlp/yt-dlp/releases/latest', headers: { 'User-Agent': 'aether-cep' } }, function (response) {
           var body = ''; response.on('data', function (d) { body += d; }); response.on('end', function () { try { done(JSON.parse(body).tag_name !== current); } catch (e) { done(false); } });
         }).on('error', function () { done(false); });
       } catch (e) { done(false); }
@@ -313,4 +313,4 @@
       return { cancel: cancel };
     }
   };
-})(BunBunMedia);
+})(AetherCEP);

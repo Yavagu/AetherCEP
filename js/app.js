@@ -1,7 +1,13 @@
-/* global require, navigator, BunBunMedia */
+/* global require, navigator, AetherCEP */
 (function (api) {
   'use strict';
-  var historyKey = 'bunbunmedia.activity.v2', urlKey = 'bunbunmedia.sourceUrl.v1', convertTimer = null, activeDownload = null;
+  var historyKey = 'aethercep.activity.v1', urlKey = 'aethercep.sourceUrl.v1', convertTimer = null, activeDownload = null;
+  if (!localStorage.getItem(historyKey) && localStorage.getItem('bunbunmedia.activity.v2')) {
+    try { localStorage.setItem(historyKey, localStorage.getItem('bunbunmedia.activity.v2')); } catch (e) {}
+  }
+  if (!localStorage.getItem(urlKey) && localStorage.getItem('bunbunmedia.sourceUrl.v1')) {
+    try { localStorage.setItem(urlKey, localStorage.getItem('bunbunmedia.sourceUrl.v1')); } catch (e) {}
+  }
 
   function saveUrl(value) {
     var url = String(value || '').trim();
@@ -177,4 +183,4 @@
     api.media.checkUpdate(function (outdated) { if (outdated) updateDownloader(); });
   }
   initialize();
-})(BunBunMedia);
+})(AetherCEP);

@@ -15,14 +15,14 @@ function loadMedia(spawn, folder = '.') {
     byId: () => ({ value: '', checked: false })
   };
   const localRequire = name => name === 'child_process' ? { spawn, spawnSync: () => ({ status: 1 }) } : require(name);
-  const context = { BunBunMedia: api, require: localRequire, process: { env: {}, platform: 'win32' } };
+  const context = { AetherCEP: api, BunBunMedia: api, require: localRequire, process: { env: {}, platform: 'win32' } };
   vm.createContext(context);
   vm.runInContext(fs.readFileSync('js/media.js', 'utf8'), context);
   return api.media;
 }
 
 {
-  const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'bunbun-cleanup-'));
+  const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'aether-cleanup-'));
   const completed = path.join(folder, 'completed.webm');
   const partial = path.join(folder, 'download.webm.part');
   fs.writeFileSync(completed, 'complete');

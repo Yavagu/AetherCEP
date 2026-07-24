@@ -18,7 +18,7 @@ function loadMedia(spawn, withFfmpeg) {
     byId: id => fields[id] || { value: '', checked: false }
   };
   const localRequire = name => name === 'child_process' ? { spawn, spawnSync: () => ({ status: 1 }) } : require(name);
-  const context = { BunBunMedia: api, require: localRequire, process: { env: {}, platform: 'win32' } };
+  const context = { AetherCEP: api, BunBunMedia: api, require: localRequire, process: { env: {}, platform: 'win32' } };
   vm.createContext(context);
   vm.runInContext(fs.readFileSync('js/media.js', 'utf8'), context);
   return api.media;

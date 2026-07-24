@@ -2,16 +2,16 @@
 
 ## Install and open the panel
 
-Download the packaged release archive, extract it, and run `Setup.bat`. Restart Premiere Pro after installation, then choose **Window > Extensions > BunBun Media**.
+Download the packaged release archive, extract it, and run `Setup.bat`. Restart Premiere Pro after installation, then choose **Window > Extensions > AetherCEP**.
 
-The installer places the extension at `%APPDATA%\Adobe\CEP\extensions\BunBunMedia`. It also enables unsigned CEP extensions for the current Windows user. Administrator access is normally unnecessary.
+The installer places the extension at `%APPDATA%\Adobe\CEP\extensions\AetherCEP`. It also enables unsigned CEP extensions for the current Windows user. Administrator access is normally unnecessary.
 
 ## Download media
 
 1. Paste one YouTube video, Short, or livestream URL. Playlists are intentionally ignored.
 2. Choose **Video + Audio**, **Audio Only**, or **Video Only**.
 3. Select a maximum resolution. **Best compatible** is capped at 1080p for reliable Premiere compatibility; 1440p and 2160p may require conversion and take longer.
-   To use a source-specific stream, paste the URL and select **Refresh** beside Quality. BunBun Media runs yt-dlp's `--list-formats` query and adds the reported format IDs below the built-in presets. With **Video + Audio** selected, choosing a `video only` or `audio only` entry automatically pairs it with the best complementary stream and merges both into one file using FFmpeg.
+   To use a source-specific stream, paste the URL and select **Refresh** beside Quality. AetherCEP runs yt-dlp's `--list-formats` query and adds the reported format IDs below the built-in presets. With **Video + Audio** selected, choosing a `video only` or `audio only` entry automatically pairs it with the best complementary stream and merges both into one file using FFmpeg.
 4. Choose the output folder. The initial default is `Desktop\YT Downloads`.
 5. Select **Download media** and keep Premiere open until processing finishes.
 
@@ -40,7 +40,7 @@ Public videos usually work with **None** selected. For content your account is p
 - Firefox is often more reliable when Chromium cookie encryption blocks access.
 - Alternatively, export a Netscape-format `cookies.txt`, select it in the panel, and use **Check**.
 
-A cookie file represents your signed-in session. Store it securely, never share it, and delete it when it is no longer required. BunBun Media does not need or ask for your YouTube password.
+A cookie file represents your signed-in session. Store it securely, never share it, and delete it when it is no longer required. AetherCEP does not need or ask for your YouTube password.
 
 ## Import into Premiere
 
@@ -56,12 +56,12 @@ Open a project before importing. Open or create a sequence with at least one vid
 - `Diagnose.bat` shows available formats and simulates format selection for a URL.
 - `FixCache.bat` clears matching CEP caches. Close Premiere before running it.
 - The panel checks for a newer yt-dlp release and can update the installed executable.
-- BunBun Media checks for a newer stable extension release each time the panel starts in Premiere. Select **Check for updates** in the footer to check manually.
-- `UNINSTALL.bat` removes only `%APPDATA%\Adobe\CEP\extensions\BunBunMedia`. Downloads and Premiere project files are not removed.
+- AetherCEP checks for a newer stable extension release each time the panel starts in Premiere. Select **Check for updates** in the footer to check manually.
+- `UNINSTALL.bat` removes only `%APPDATA%\Adobe\CEP\extensions\AetherCEP`. Downloads and Premiere project files are not removed.
 
 ### Downloading an extension update
 
-When a newer version is available, select **Download update ZIP** in the update notice. This opens the BunBun Media Releases page in your browser. Download the latest full ZIP, extract it, run `Setup.bat`, and restart Premiere Pro.
+When a newer version is available, select **Download update ZIP** in the update notice. This opens the AetherCEP Releases page in your browser. Download the latest full ZIP, extract it, run `Setup.bat`, and restart Premiere Pro.
 
 The panel only checks the version and opens GitHub. It does not download or install extension files in the background.
 

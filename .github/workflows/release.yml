@@ -47,7 +47,7 @@ jobs:
         shell: pwsh
         run: |
           $version = '${{ steps.release.outputs.version }}'
-          $zip = "BunBunMedia-update-$version.zip"
+          $zip = "AetherCEP-update-$version.zip"
           git archive --format=zip --output=$zip '${{ steps.release.outputs.tag }}'
           $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  $zip" | Set-Content -LiteralPath "$zip.sha256" -Encoding ascii
@@ -59,10 +59,10 @@ jobs:
         run: |
           $tag = '${{ steps.release.outputs.tag }}'
           $version = '${{ steps.release.outputs.version }}'
-          $zip = "BunBunMedia-update-$version.zip"
+          $zip = "AetherCEP-update-$version.zip"
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) {
             gh release upload $tag $zip "$zip.sha256" --clobber
           } else {
-            gh release create $tag $zip "$zip.sha256" --verify-tag --generate-notes --title "BunBun Media $version"
+            gh release create $tag $zip "$zip.sha256" --verify-tag --generate-notes --title "AetherCEP $version"
           }

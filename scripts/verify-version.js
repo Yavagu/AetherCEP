@@ -14,7 +14,7 @@ const checks = [
   ['package.json', packageVersion === expected],
   ['version.json', canonicalVersion === expected],
   ['manifest bundle', manifest.includes(`ExtensionBundleVersion="${expected}"`)],
-  ['manifest extension', manifest.includes(`Extension Id="com.bunbunmedia.panel" Version="${expected}"`)],
+  ['manifest extension', manifest.includes(`Extension Id="com.aethercep.panel" Version="${expected}"`)],
   ['panel footer', html.includes(`v${expected} · CEP`)]
 ];
 const failed = checks.filter(([, ok]) => !ok).map(([name]) => name);

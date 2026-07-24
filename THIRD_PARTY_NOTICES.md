@@ -1,6 +1,6 @@
 # Third-party notices
 
-BunBun Media release packages may redistribute or interface with the following projects. Each remains governed by its own license; inclusion does not change that license.
+AetherCEP release packages may redistribute or interface with the following projects. Each remains governed by its own license; inclusion does not change that license.
 
 | Component | Purpose | Project and license information |
 | --- | --- | --- |
@@ -11,4 +11,4 @@ BunBun Media release packages may redistribute or interface with the following p
 
 Release maintainers must verify redistribution terms for the exact binaries being packaged and include any license files required by those terms. FFmpeg licensing depends on its build configuration; record the distributor and configuration for every release.
 
-`yt-dlp-readme.md` is upstream documentation retained for reference and is not the documentation for BunBun Media.
+`yt-dlp-readme.md` is upstream documentation retained for reference and is not the documentation for AetherCEP.

@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ExtensionManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ExtensionBundleId="com.bunbunmedia" ExtensionBundleName="BunBun Media" ExtensionBundleVersion="2.0.9" Version="10.0">
-  <ExtensionList><Extension Id="com.bunbunmedia.panel" Version="2.0.9"/></ExtensionList>
+<ExtensionManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ExtensionBundleId="com.aethercep" ExtensionBundleName="AetherCEP" ExtensionBundleVersion="2.0.9" Version="10.0">
+  <ExtensionList><Extension Id="com.aethercep.panel" Version="2.0.9"/></ExtensionList>
   <ExecutionEnvironment>
     <HostList><Host Name="PPRO" Version="[13.0,99.9]"/></HostList>
     <LocaleList><Locale Code="All"/></LocaleList>
     <RequiredRuntimeList><RequiredRuntime Name="CSXS" Version="9.0"/></RequiredRuntimeList>
   </ExecutionEnvironment>
   <DispatchInfoList>
-    <Extension Id="com.bunbunmedia.panel">
+    <Extension Id="com.aethercep.panel">
       <DispatchInfo>
         <Resources>
           <MainPath>./index.html</MainPath><ScriptPath>./jsx/main.jsx</ScriptPath>
           <CEFCommandLine><Parameter>--enable-nodejs</Parameter><Parameter>--mixed-context</Parameter><Parameter>--disable-application-cache</Parameter></CEFCommandLine>
         </Resources>
         <Lifecycle><AutoVisible>true</AutoVisible></Lifecycle>
-        <UI><Type>Panel</Type><Menu>BunBun Media</Menu><Geometry><Size><Height>560</Height><Width>380</Width></Size><MinSize><Height>480</Height><Width>300</Width></MinSize></Geometry><Icons/></UI>
+        <UI><Type>Panel</Type><Menu>AetherCEP</Menu><Geometry><Size><Height>560</Height><Width>380</Width></Size><MinSize><Height>480</Height><Width>300</Width></MinSize></Geometry><Icons/></UI>
       </DispatchInfo>
     </Extension>
   </DispatchInfoList>
