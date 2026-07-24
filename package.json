@@ -5,7 +5,8 @@
   "description": "Premiere Pro media workflow extension",
   "scripts": {
     "test": "node tests/timecode.test.js && node tests/media-import.test.js && node tests/media-formats.test.js && node tests/media-lifecycle.test.js && node tests/version.test.js && node tests/update-check.test.js",
-    "verify-version": "node scripts/verify-version.js"
+    "verify-version": "node scripts/verify-version.js",
+    "build-release": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-release.ps1"
   },
   "engines": {
     "node": ">=18"

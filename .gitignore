@@ -1,6 +1,9 @@
 # Release artifacts and third-party executables
+AetherCEP*.zip
+AetherCEP*.sha256
 BunBunMedia*.zip
 BunBunMedia*.sha256
+dist/
 bin/*.exe
 
 # Credentials and local configuration
