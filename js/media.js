@@ -375,8 +375,16 @@
     var args = [
       '-s', '-L',
       '-A', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-      '-H', 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+      '-H', 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
       '-H', 'Accept-Language: en-US,en;q=0.9',
+      '-H', 'Sec-Ch-Ua: "Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+      '-H', 'Sec-Ch-Ua-Mobile: ?0',
+      '-H', 'Sec-Ch-Ua-Platform: "Windows"',
+      '-H', 'Sec-Fetch-Dest: document',
+      '-H', 'Sec-Fetch-Mode: navigate',
+      '-H', 'Sec-Fetch-Site: none',
+      '-H', 'Sec-Fetch-User: ?1',
+      '-H', 'Upgrade-Insecure-Requests: 1',
       canonicalUrl
     ];
 
@@ -393,7 +401,11 @@
             done(true, parsed.audioUrl, parsed.title);
             return;
           }
-          logOutput('[Uppbeat Resolver] WARNING: Could not parse preview URL from curl response. HTML snippet: ' + stdout.slice(0, 200).replace(/[\r\n]+/g, ' ') + '...\n');
+          if (/Vercel Security Checkpoint|Just a moment\.\.\./i.test(stdout)) {
+            logOutput('[Uppbeat Resolver] NOTICE: Vercel Security Checkpoint detected in curl response.\n');
+          } else {
+            logOutput('[Uppbeat Resolver] WARNING: Could not parse preview URL from curl response. HTML snippet: ' + stdout.slice(0, 200).replace(/[\r\n]+/g, ' ') + '...\n');
+          }
         } else if (err) {
           logOutput('[Uppbeat Resolver] WARNING: curl.exe returned error: ' + (err.message || err) + '\n');
         }
@@ -421,7 +433,16 @@
           path: parsedUrl.path,
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Sec-Ch-Ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Ch-Ua-Platform': '"Windows"',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Upgrade-Insecure-Requests': '1',
             'Referer': 'https://uppbeat.io/'
           }
         };
@@ -443,11 +464,18 @@
               logOutput('[Uppbeat Resolver] Successfully extracted preview link via HTTPS:\n -> ' + parsed.audioUrl + '\n');
               done(true, parsed.audioUrl, parsed.title);
             } else {
+              var isVercel = /Vercel Security Checkpoint|Just a moment\.\.\./i.test(body) || res.statusCode === 429;
               logOutput('[Uppbeat Resolver] ERROR: Could not extract Uppbeat preview link from page response.\n');
               if (body.length > 0) {
                 logOutput('[Uppbeat Resolver] Page Snippet (first 300 chars): ' + body.slice(0, 300).replace(/[\r\n]+/g, ' ') + '...\n');
               }
-              done(false, null, 'Could not extract Uppbeat preview link from track page.');
+              if (isVercel) {
+                logOutput('[Uppbeat Resolver] NOTE: Vercel Security Checkpoint is active for page requests on this IP address.\n');
+                logOutput('[Uppbeat Resolver] TIP: Paste the direct inspect element .mp3 CDN link into the input box to download instantly.\n');
+                done(false, null, 'Vercel Security Checkpoint blocked automatic page parsing. Paste the direct inspect element .mp3 CDN link into the input box to download.');
+              } else {
+                done(false, null, 'Could not extract Uppbeat preview link from track page.');
+              }
             }
           });
         }).on('error', function (err) {
