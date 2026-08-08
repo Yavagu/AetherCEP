@@ -293,16 +293,29 @@
     };
   }
 
-  function resolveUppbeatUrl(rawUrl, done) {
+  function resolveUppbeatUrl(rawUrl, handlers, done) {
+    if (typeof handlers === 'function') {
+      done = handlers;
+      handlers = null;
+    }
+    function logCmd(cmd) {
+      if (handlers && handlers.command) handlers.command(cmd);
+    }
+    function logOutput(text) {
+      if (handlers && handlers.output) handlers.output(text);
+    }
+
     var trimmed = String(rawUrl || '').trim();
     if (/\.mp3(?:\?.*)?$/i.test(trimmed)) {
       var nameMatch = trimmed.match(/\/([^\/?#]+)\.mp3/i);
       var title = nameMatch ? nameMatch[1].replace(/[-_]/g, ' ') : 'Uppbeat Track';
+      logOutput('[Uppbeat Resolver] Direct MP3 URL detected.\n');
       done(true, trimmed, title);
       return;
     }
     var trackMatch = trimmed.match(/uppbeat\.io\/(?:music\/tracks|t)\/([\w-]+)\/([\w-]+)/i);
     if (!trackMatch) {
+      logOutput('[Uppbeat Resolver] ERROR: Invalid Uppbeat URL structure.\n');
       done(false, trimmed, 'Invalid Uppbeat URL.');
       return;
     }
@@ -314,25 +327,47 @@
     var fallbackTitle = capitalize(artistSlug) + ' - ' + capitalize(trackSlug);
 
     function parseHtml(html) {
+      if (!html) return null;
+
+      // 1. Unescape slashes like \/ -> /
+      var unescaped = html.replace(/\\\/|\\/g, '/');
+
+      // 2. Parse __NEXT_DATA__ script block
       var nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s);
       if (nextDataMatch) {
         try {
           var json = JSON.parse(nextDataMatch[1]);
-          var pageProps = json.props && json.props.pageProps ? json.props.pageProps : {};
-          var typesense = pageProps.typesenseTrack || {};
-          var artist = typesense.contributor_name || pageProps.artist || '';
-          var track = typesense.name || pageProps.trackName || '';
-          var previewUrl = typesense.version_preview_uri || pageProps.version_preview_uri;
-          if (previewUrl) {
+          var jsonStr = JSON.stringify(json);
+
+          // Deep search for version_preview_uri or preview_url or any cdn.uppbeat.io mp3 link in JSON
+          var uriMatch = jsonStr.match(/"version_preview_uri"\s*:\s*"([^"]+)"/i) ||
+                         jsonStr.match(/"preview_url"\s*:\s*"([^"]+)"/i) ||
+                         jsonStr.match(/"audio_url"\s*:\s*"([^"]+)"/i) ||
+                         jsonStr.match(/"(https?:\/\/[^"]+cdn\.uppbeat\.io[^"]+\.mp3[^"]*)"/i);
+
+          var pageProps = (json.props && json.props.pageProps) || {};
+          var typesense = pageProps.typesenseTrack || pageProps.track || pageProps.trackData || {};
+          var artist = typesense.contributor_name || typesense.artist_name || pageProps.artist || pageProps.artistName || '';
+          var track = typesense.name || typesense.title || pageProps.trackName || pageProps.title || '';
+
+          if (uriMatch && uriMatch[1]) {
+            var audioUrl = uriMatch[1].replace(/\\/g, '');
             var title = (artist && track) ? (artist + ' - ' + track) : fallbackTitle;
-            return { ok: true, audioUrl: previewUrl, title: title };
+            return { ok: true, audioUrl: audioUrl, title: title };
           }
         } catch (e) {}
       }
-      var previewMatch = html.match(/https?:\/\/cdn\.uppbeat\.io\/[^\s"'<>]+\.mp3[^\s"'<>]*/i);
-      if (previewMatch) {
-        return { ok: true, audioUrl: previewMatch[0], title: fallbackTitle };
+
+      // 3. Deep search for any cdn.uppbeat.io MP3 link in raw or unescaped HTML
+      var cdnMatch = unescaped.match(/https?:\/\/[^\s"'<>]+\.uppbeat\.io\/[^\s"'<>]+\.mp3[^\s"'<>]*/i) ||
+                     unescaped.match(/https?:\/\/cdn\.uppbeat\.io\/[^\s"'<>]+\.mp3[^\s"'<>]*/i) ||
+                     unescaped.match(/https?:\/\/[^\s"'<>]+\.mp3\?[^\s"'<>]*/i);
+
+      if (cdnMatch) {
+        var cleanUrl = cdnMatch[0].replace(/\\/g, '').replace(/&amp;/g, '&');
+        return { ok: true, audioUrl: cleanUrl, title: fallbackTitle };
       }
+
       return null;
     }
 
@@ -345,18 +380,29 @@
       canonicalUrl
     ];
 
+    logCmd('curl.exe ' + args.map(function (a) { return /[\s"]/.test(a) ? '"' + a + '"' : a; }).join(' '));
+    logOutput('[Uppbeat Resolver] Resolving track page: ' + canonicalUrl + '\n');
+
     try {
       cp.execFile('curl.exe', args, { maxBuffer: 10 * 1024 * 1024 }, function (err, stdout) {
         if (!err && stdout) {
+          logOutput('[Uppbeat Resolver] Executed curl.exe (received ' + stdout.length + ' bytes).\n');
           var parsed = parseHtml(stdout);
           if (parsed) {
+            logOutput('[Uppbeat Resolver] Successfully extracted preview link:\n -> ' + parsed.audioUrl + '\n');
             done(true, parsed.audioUrl, parsed.title);
             return;
           }
+          logOutput('[Uppbeat Resolver] WARNING: Could not parse preview URL from curl response. HTML snippet: ' + stdout.slice(0, 200).replace(/[\r\n]+/g, ' ') + '...\n');
+        } else if (err) {
+          logOutput('[Uppbeat Resolver] WARNING: curl.exe returned error: ' + (err.message || err) + '\n');
         }
+        logOutput('[Uppbeat Resolver] Falling back to native HTTPS request...\n');
         fallbackHttps();
       });
     } catch (e) {
+      logOutput('[Uppbeat Resolver] WARNING: Exception starting curl.exe: ' + e.message + '\n');
+      logOutput('[Uppbeat Resolver] Falling back to native HTTPS request...\n');
       fallbackHttps();
     }
 
@@ -365,6 +411,7 @@
       var urlModule = require('url');
       function fetchUrl(targetUrl, depth) {
         if (depth > 5) {
+          logOutput('[Uppbeat Resolver] ERROR: Exceeded maximum redirects (5).\n');
           done(false, null, 'Too many redirects when fetching Uppbeat page.');
           return;
         }
@@ -378,23 +425,33 @@
             'Referer': 'https://uppbeat.io/'
           }
         };
+        logOutput('[Uppbeat Resolver] HTTPS GET ' + targetUrl + '\n');
         https.get(options, function (res) {
+          logOutput('[Uppbeat Resolver] HTTPS Response Status: ' + res.statusCode + ' ' + (res.statusMessage || '') + '\n');
           if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
             var redirectUrl = urlModule.resolve(targetUrl, res.headers.location);
+            logOutput('[Uppbeat Resolver] Following redirect -> ' + redirectUrl + '\n');
             fetchUrl(redirectUrl, depth + 1);
             return;
           }
           var body = '';
           res.on('data', function (chunk) { body += chunk; });
           res.on('end', function () {
+            logOutput('[Uppbeat Resolver] HTTPS received ' + body.length + ' bytes.\n');
             var parsed = parseHtml(body);
             if (parsed) {
+              logOutput('[Uppbeat Resolver] Successfully extracted preview link via HTTPS:\n -> ' + parsed.audioUrl + '\n');
               done(true, parsed.audioUrl, parsed.title);
             } else {
+              logOutput('[Uppbeat Resolver] ERROR: Could not extract Uppbeat preview link from page response.\n');
+              if (body.length > 0) {
+                logOutput('[Uppbeat Resolver] Page Snippet (first 300 chars): ' + body.slice(0, 300).replace(/[\r\n]+/g, ' ') + '...\n');
+              }
               done(false, null, 'Could not extract Uppbeat preview link from track page.');
             }
           });
         }).on('error', function (err) {
+          logOutput('[Uppbeat Resolver] ERROR: HTTPS request failed: ' + err.message + '\n');
           done(false, null, 'Could not fetch Uppbeat track page: ' + err.message);
         });
       }
@@ -502,7 +559,7 @@
 
       if (isUppbeat) {
         var directTask = null;
-        resolveUppbeatUrl(rawUrl, function (ok, audioUrl, trackTitle) {
+        resolveUppbeatUrl(rawUrl, handlers, function (ok, audioUrl, trackTitle) {
           if (cancelled) return;
           if (!ok || !audioUrl) {
             handlers.error(trackTitle || 'Could not resolve Uppbeat audio link.');

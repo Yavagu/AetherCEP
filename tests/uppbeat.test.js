@@ -59,4 +59,12 @@ media.resolveUppbeatUrl(directMp3Url, (ok, audioUrl, title) => {
   assert.ok(title.length > 0, 'Title should be extracted');
 });
 
+let outputLogged = false;
+media.resolveUppbeatUrl(directMp3Url, {
+  output: text => { outputLogged = true; }
+}, (ok, audioUrl, title) => {
+  assert.strictEqual(ok, true);
+  assert.strictEqual(outputLogged, true, 'Output should be logged to handlers');
+});
+
 console.log('Uppbeat tests passed successfully!');
