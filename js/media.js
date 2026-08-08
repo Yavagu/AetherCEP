@@ -391,6 +391,59 @@
     logCmd('curl.exe ' + args.map(function (a) { return /[\s"]/.test(a) ? '"' + a + '"' : a; }).join(' '));
     logOutput('[Uppbeat Resolver] Resolving track page: ' + canonicalUrl + '\n');
 
+    function tryBrowserCookiesFallback() {
+      var source = api.byId('cookies').value;
+      var candidateBrowsers = (source && source !== '__file__') ? [source] : ['chrome', 'edge', 'firefox', 'brave', 'opera'];
+      var index = 0;
+
+      function tryNextBrowser() {
+        if (index >= candidateBrowsers.length) {
+          logOutput('[Uppbeat Resolver] NOTE: Vercel Security Checkpoint is active for page requests on this IP address.\n');
+          logOutput('[Uppbeat Resolver] TIP: Open Uppbeat in your browser, inspect element -> Network (search .mp3), and paste the cdn.uppbeat.io link directly into AetherCEP.\n');
+          done(false, null, 'Vercel Security Checkpoint blocked automatic page parsing. Paste the direct inspect element .mp3 CDN link into the input box to download.');
+          return;
+        }
+        var b = candidateBrowsers[index];
+        index += 1;
+        logOutput('[Uppbeat Resolver] Attempting clearance using ' + b + ' session cookies...\n');
+
+        var fs = require('fs'), path = require('path'), os = require('os');
+        var tempCookie = path.join(os.tmpdir(), 'aether_uppbeat_cookies_' + Date.now() + '.txt');
+        var exportArgs = ['--cookies-from-browser', b, '--cookies', tempCookie, '--simulate', 'https://uppbeat.io/'];
+
+        try {
+          cp.execFile(ytdlp(), exportArgs, { windowsHide: true, env: childEnvironment(), timeout: 10000 }, function (cErr) {
+            if (fs.existsSync(tempCookie) && fs.statSync(tempCookie).size > 0) {
+              logOutput('[Uppbeat Resolver] Exported cookies from ' + b + '. Running curl.exe with cookie file...\n');
+              var cookieCurlArgs = args.slice();
+              cookieCurlArgs.unshift('-b', tempCookie);
+
+              logCmd('curl.exe ' + cookieCurlArgs.map(function (a) { return /[\s"]/.test(a) ? '"' + a + '"' : a; }).join(' '));
+              cp.execFile('curl.exe', cookieCurlArgs, { maxBuffer: 10 * 1024 * 1024 }, function (kErr, stdout) {
+                try { fs.unlinkSync(tempCookie); } catch (e) {}
+                if (!kErr && stdout) {
+                  var parsed = parseHtml(stdout);
+                  if (parsed) {
+                    logOutput('[Uppbeat Resolver] Successfully bypassed Vercel Checkpoint using ' + b + ' cookies!\n -> ' + parsed.audioUrl + '\n');
+                    done(true, parsed.audioUrl, parsed.title);
+                    return;
+                  }
+                }
+                tryNextBrowser();
+              });
+            } else {
+              try { fs.unlinkSync(tempCookie); } catch (e) {}
+              tryNextBrowser();
+            }
+          });
+        } catch (e) {
+          tryNextBrowser();
+        }
+      }
+
+      tryNextBrowser();
+    }
+
     try {
       cp.execFile('curl.exe', args, { maxBuffer: 10 * 1024 * 1024 }, function (err, stdout) {
         if (!err && stdout) {
@@ -470,9 +523,8 @@
                 logOutput('[Uppbeat Resolver] Page Snippet (first 300 chars): ' + body.slice(0, 300).replace(/[\r\n]+/g, ' ') + '...\n');
               }
               if (isVercel) {
-                logOutput('[Uppbeat Resolver] NOTE: Vercel Security Checkpoint is active for page requests on this IP address.\n');
-                logOutput('[Uppbeat Resolver] TIP: Paste the direct inspect element .mp3 CDN link into the input box to download instantly.\n');
-                done(false, null, 'Vercel Security Checkpoint blocked automatic page parsing. Paste the direct inspect element .mp3 CDN link into the input box to download.');
+                logOutput('[Uppbeat Resolver] Vercel Security Checkpoint detected. Attempting browser cookie clearance...\n');
+                tryBrowserCookiesFallback();
               } else {
                 done(false, null, 'Could not extract Uppbeat preview link from track page.');
               }
