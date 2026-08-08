@@ -225,6 +225,74 @@
     return 'Download failed. Check the URL, access permissions, and connection.';
   }
 
+  function downloadDirectFile(fileUrl, outputPath, headers, handlers) {
+    var https = require('https'), http = require('http'), fs = require('fs');
+    var client = fileUrl.startsWith('https') ? https : http;
+    var reqOptions = {
+      headers: Object.assign({
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0',
+        'Accept': '*/*',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Referer': 'https://uppbeat.io/'
+      }, headers || {})
+    };
+
+    var fileStream = fs.createWriteStream(outputPath);
+    handlers.output('Downloading direct audio stream...', 0);
+
+    var req = client.get(fileUrl, reqOptions, function (res) {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        fileStream.close();
+        try { fs.unlinkSync(outputPath); } catch (e) {}
+        return downloadDirectFile(res.headers.location, outputPath, headers, handlers);
+      }
+
+      if (res.statusCode !== 200) {
+        fileStream.close();
+        try { fs.unlinkSync(outputPath); } catch (e) {}
+        handlers.error('CDN server returned HTTP ' + res.statusCode + ' Forbidden. Please ensure you are using a valid direct .mp3 CDN link.');
+        return;
+      }
+
+      var totalBytes = parseInt(res.headers['content-length'] || '0', 10);
+      var downloadedBytes = 0;
+
+      res.on('data', function (chunk) {
+        downloadedBytes += chunk.length;
+        fileStream.write(chunk);
+        if (totalBytes > 0) {
+          var pct = (downloadedBytes / totalBytes) * 100;
+          handlers.output('Downloading... ' + pct.toFixed(1) + '%', pct);
+        } else {
+          handlers.output('Downloaded ' + (downloadedBytes / 1024 / 1024).toFixed(2) + ' MB', null);
+        }
+      });
+
+      res.on('end', function () {
+        fileStream.end();
+      });
+
+      fileStream.on('finish', function () {
+        fileStream.close();
+        handlers.success(outputPath, '');
+      });
+    });
+
+    req.on('error', function (err) {
+      fileStream.close();
+      try { fs.unlinkSync(outputPath); } catch (e) {}
+      handlers.error('Network error downloading audio: ' + err.message);
+    });
+
+    return {
+      cancel: function () {
+        req.destroy();
+        fileStream.close();
+        try { fs.unlinkSync(outputPath); } catch (e) {}
+      }
+    };
+  }
+
   function resolveUppbeatUrl(rawUrl, done) {
     var trimmed = String(rawUrl || '').trim();
     if (/\.mp3(?:\?.*)?$/i.test(trimmed)) {
@@ -239,34 +307,83 @@
       return;
     }
     var artistSlug = trackMatch[1], trackSlug = trackMatch[2];
+    var canonicalUrl = 'https://uppbeat.io/music/tracks/' + artistSlug + '/' + trackSlug;
     function capitalize(str) {
       return str.replace(/[-_]/g, ' ').replace(/\b\w/g, function (l) { return l.toUpperCase(); });
     }
-    var formattedTitle = capitalize(artistSlug) + ' - ' + capitalize(trackSlug);
-    var https = require('https');
-    var options = {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Referer': 'https://uppbeat.io/'
+    var fallbackTitle = capitalize(artistSlug) + ' - ' + capitalize(trackSlug);
+
+    function parseHtml(html) {
+      var nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s);
+      if (nextDataMatch) {
+        try {
+          var json = JSON.parse(nextDataMatch[1]);
+          var pageProps = json.props && json.props.pageProps ? json.props.pageProps : {};
+          var typesense = pageProps.typesenseTrack || {};
+          var artist = typesense.contributor_name || pageProps.artist || '';
+          var track = typesense.name || pageProps.trackName || '';
+          var previewUrl = typesense.version_preview_uri || pageProps.version_preview_uri;
+          if (previewUrl) {
+            var title = (artist && track) ? (artist + ' - ' + track) : fallbackTitle;
+            return { ok: true, audioUrl: previewUrl, title: title };
+          }
+        } catch (e) {}
       }
-    };
-    https.get(trimmed, options, function (res) {
-      var body = '';
-      res.on('data', function (chunk) { body += chunk; });
-      res.on('end', function () {
-        var mp3Match = body.match(/https?:\/\/[^\s"'<>]+\.mp3[^\s"'<>]*/i);
-        if (mp3Match) {
-          done(true, mp3Match[0], formattedTitle);
-        } else {
-          var fallbackCdn = 'https://cdn.uppbeat.io/audio-previews/' + artistSlug + '/' + trackSlug + '.mp3';
-          done(true, fallbackCdn, formattedTitle);
+      var previewMatch = html.match(/https?:\/\/cdn\.uppbeat\.io\/[^\s"'<>]+\.mp3[^\s"'<>]*/i);
+      if (previewMatch) {
+        return { ok: true, audioUrl: previewMatch[0], title: fallbackTitle };
+      }
+      return null;
+    }
+
+    var cp = require('child_process');
+    var args = [
+      '-s', '-L',
+      '-A', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      '-H', 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+      '-H', 'Accept-Language: en-US,en;q=0.9',
+      canonicalUrl
+    ];
+
+    try {
+      cp.execFile('curl.exe', args, { maxBuffer: 10 * 1024 * 1024 }, function (err, stdout) {
+        if (!err && stdout) {
+          var parsed = parseHtml(stdout);
+          if (parsed) {
+            done(true, parsed.audioUrl, parsed.title);
+            return;
+          }
         }
+        fallbackHttps();
       });
-    }).on('error', function () {
-      var fallbackCdn = 'https://cdn.uppbeat.io/audio-previews/' + artistSlug + '/' + trackSlug + '.mp3';
-      done(true, fallbackCdn, formattedTitle);
-    });
+    } catch (e) {
+      fallbackHttps();
+    }
+
+    function fallbackHttps() {
+      var https = require('https');
+      var options = {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Referer': 'https://uppbeat.io/'
+        }
+      };
+      https.get(canonicalUrl, options, function (res) {
+        var body = '';
+        res.on('data', function (chunk) { body += chunk; });
+        res.on('end', function () {
+          var parsed = parseHtml(body);
+          if (parsed) {
+            done(true, parsed.audioUrl, parsed.title);
+          } else {
+            done(false, null, 'Could not extract Uppbeat preview link from track page.');
+          }
+        });
+      }).on('error', function (err) {
+        done(false, null, 'Could not fetch Uppbeat track page: ' + err.message);
+      });
+    }
   }
 
   api.media = {
@@ -368,15 +485,28 @@
       }
 
       if (isUppbeat) {
+        var directTask = null;
         resolveUppbeatUrl(rawUrl, function (ok, audioUrl, trackTitle) {
+          if (cancelled) return;
+          if (!ok || !audioUrl) {
+            handlers.error(trackTitle || 'Could not resolve Uppbeat audio link.');
+            return;
+          }
           var path = require('path');
-          var safeTitle = trackTitle.replace(/[\/\\?%*:|"<>]/g, '');
-          var args = ['--no-playlist', '--newline', '--windows-filenames', '--no-overwrites', '--retries', '3',
-            '--add-header', 'Referer: https://uppbeat.io/',
-            '-o', path.join(api.state.folder, safeTitle + ' [' + id + '].%(ext)s'), audioUrl];
-          run(args, { cookies: false, format: false, age: false });
+          var safeTitle = (trackTitle || 'Uppbeat Track').replace(/[\/\\?%*:|"<>]/g, '');
+          var targetFile = path.join(api.state.folder, safeTitle + ' [' + id + '].mp3');
+
+          // Download direct MP3 natively without yt-dlp webpage extraction overhead
+          directTask = downloadDirectFile(audioUrl, targetFile, { 'Referer': 'https://uppbeat.io/' }, handlers);
         });
-        return { cancel: cancel };
+
+        return {
+          cancel: function () {
+            cancelled = true;
+            if (directTask && directTask.cancel) directTask.cancel();
+            if (handlers.cancelled) handlers.cancelled();
+          }
+        };
       }
 
       run(argumentsFor(url, quality, false, section), { cookies: cookieArguments().length > 0, format: true, age: true });

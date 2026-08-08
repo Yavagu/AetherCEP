@@ -30,8 +30,8 @@ function loadMedia(api) {
 const core = loadCore();
 
 const trackUrl1 = 'https://uppbeat.io/music/tracks/simon-folwar/operation-frostfall';
-const trackUrl2 = 'https://uppbeat.io/t/hollow-coves/coastline';
-const directMp3Url = 'https://cdn.uppbeat.io/audio-previews/simon-folwar/operation-frostfall.mp3';
+const trackUrl2 = 'https://uppbeat.io/t/simon-folwar/operation-frostfall';
+const directMp3Url = 'https://cdn.uppbeat.io/audio-files/0e5573c69208594d8a7e799df2ff2bcc/b5d604dde1721ee4425f938a1cecb8b0/b17ffb1a8312f22d6cb667e4181fcf1d/STREAMING-operation-frostfall-simon-folwar-main-version-47310-02-34.mp3';
 const invalidUrl = 'https://example.com/some-audio.wav';
 
 assert.strictEqual(core.validUrl(trackUrl1), true, 'Track URL 1 should be valid');
@@ -40,7 +40,7 @@ assert.strictEqual(core.validUrl(directMp3Url), true, 'Direct MP3 URL should be 
 assert.strictEqual(core.validUrl(invalidUrl), false, 'Invalid URL should be rejected');
 
 assert.strictEqual(core.videoId(trackUrl1), 'simon-folwar-operation-frostfall', 'Video ID for Track 1');
-assert.strictEqual(core.videoId(trackUrl2), 'hollow-coves-coastline', 'Video ID for Track 2');
+assert.strictEqual(core.videoId(trackUrl2), 'simon-folwar-operation-frostfall', 'Video ID for Track 2');
 assert.ok(core.videoId(directMp3Url).length > 0, 'Direct MP3 should yield a hash ID');
 
 // 2. Test Media Resolution & Format Listing
@@ -53,15 +53,14 @@ media.listFormats(trackUrl1, (ok, formats) => {
   assert.strictEqual(formats[0].kind, 'audio', 'Format kind should be audio');
 });
 
-media.resolveUppbeatUrl(trackUrl1, (ok, audioUrl, title) => {
-  assert.strictEqual(ok, true, 'resolveUppbeatUrl should succeed');
-  assert.strictEqual(title, 'Simon Folwar - Operation Frostfall', 'Formatted title check');
-  assert.ok(audioUrl.length > 0, 'Audio URL should be returned');
-});
-
 media.resolveUppbeatUrl(directMp3Url, (ok, audioUrl, title) => {
   assert.strictEqual(ok, true, 'resolveUppbeatUrl for direct MP3 should succeed');
   assert.strictEqual(audioUrl, directMp3Url, 'Direct MP3 URL should pass through');
 });
 
-console.log('Uppbeat tests passed successfully!');
+media.resolveUppbeatUrl(trackUrl1, (ok, audioUrl, title) => {
+  assert.strictEqual(ok, true, 'resolveUppbeatUrl for track page URL should succeed');
+  assert.ok(audioUrl.includes('cdn.uppbeat.io'), 'Audio URL should point to cdn.uppbeat.io');
+  assert.strictEqual(title, 'Simon Folwar - Operation Frostfall', 'Extracted title should match');
+  console.log('Uppbeat tests passed successfully!');
+});

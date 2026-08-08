@@ -164,12 +164,19 @@
       }
     });
   }
+  function updateDynamicVisibility() {
+    var raw = api.byId('video-url').value.trim();
+    var isUppbeat = /uppbeat\.io\//i.test(raw) || /\.mp3(?:\?.*)?$/i.test(raw);
+    api.show('format-card', !isUppbeat);
+    api.show('clip-card', !isUppbeat);
+  }
+
   function bindEvents() {
     api.byId('formats').addEventListener('click', function (event) { var button = event.target.closest('.format'); if (!button) return; Array.prototype.forEach.call(document.querySelectorAll('.format'), function (node) { node.classList.remove('selected'); node.setAttribute('aria-checked', 'false'); }); button.classList.add('selected'); button.setAttribute('aria-checked', 'true'); api.state.format = button.getAttribute('data-format'); });
     api.byId('refresh-formats').addEventListener('click', refreshFormats);
-    api.byId('video-url').addEventListener('input', function () { saveUrl(this.value); clearSourceFormats(); dismissReportForNewSource(); });
-    api.byId('clear-url').addEventListener('click', function () { api.byId('video-url').value = ''; saveUrl(''); clearSourceFormats(); dismissReportForNewSource(); api.byId('video-url').focus(); api.status('', ''); });
-    api.byId('paste-url').addEventListener('click', function () { var input = api.byId('video-url'); if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (text) { input.value = text.trim(); saveUrl(input.value); clearSourceFormats(); dismissReportForNewSource(); }).catch(function () { input.focus(); api.status('Press Ctrl+V to paste.', 'info'); }); else { input.focus(); api.status('Press Ctrl+V to paste.', 'info'); } });
+    api.byId('video-url').addEventListener('input', function () { saveUrl(this.value); clearSourceFormats(); dismissReportForNewSource(); updateDynamicVisibility(); });
+    api.byId('clear-url').addEventListener('click', function () { api.byId('video-url').value = ''; saveUrl(''); clearSourceFormats(); dismissReportForNewSource(); updateDynamicVisibility(); api.byId('video-url').focus(); api.status('', ''); });
+    api.byId('paste-url').addEventListener('click', function () { var input = api.byId('video-url'); if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (text) { input.value = text.trim(); saveUrl(input.value); clearSourceFormats(); dismissReportForNewSource(); updateDynamicVisibility(); }).catch(function () { input.focus(); api.status('Press Ctrl+V to paste.', 'info'); }); else { input.focus(); api.status('Press Ctrl+V to paste.', 'info'); } });
     api.byId('cookies').addEventListener('change', function () { clearSourceFormats(); cookieGuide(); }); api.byId('check-cookies').addEventListener('click', function () { var node = api.byId('cookie-help'); node.textContent = 'Checking account access…'; api.media.verifyCookies(function (ok, message) { node.className = 'inline-notice ' + (ok ? 'ok' : 'fail'); node.textContent = (ok ? '✓ ' : '× ') + message; }); });
     api.byId('timestamp-enabled').addEventListener('change', function () { api.show('timestamp-options', this.checked); if (this.checked) api.byId('timestamp-start').focus(); });
     api.byId('browse-folder').addEventListener('click', function () { api.hostCall('browseForFolder', '', function (result) { if (result && result !== 'null') { api.state.folder = result; api.byId('folder').textContent = result; renderLibrary(); } }); });
@@ -179,6 +186,7 @@
   var initialized = false;
   function initialize() {
     if (!initialized) { api.state.folder = api.defaultFolder(); api.byId('folder').textContent = api.state.folder; api.byId('video-url').value = localStorage.getItem(urlKey) || ''; bindEvents(); initialized = true; }
+    updateDynamicVisibility();
     renderHistory(); renderLibrary();
     api.media.checkUpdate(function (outdated) { if (outdated) updateDownloader(); });
   }
