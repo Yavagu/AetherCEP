@@ -362,27 +362,43 @@
 
     function fallbackHttps() {
       var https = require('https');
-      var options = {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Referer': 'https://uppbeat.io/'
+      var urlModule = require('url');
+      function fetchUrl(targetUrl, depth) {
+        if (depth > 5) {
+          done(false, null, 'Too many redirects when fetching Uppbeat page.');
+          return;
         }
-      };
-      https.get(canonicalUrl, options, function (res) {
-        var body = '';
-        res.on('data', function (chunk) { body += chunk; });
-        res.on('end', function () {
-          var parsed = parseHtml(body);
-          if (parsed) {
-            done(true, parsed.audioUrl, parsed.title);
-          } else {
-            done(false, null, 'Could not extract Uppbeat preview link from track page.');
+        var parsedUrl = urlModule.parse(targetUrl);
+        var options = {
+          hostname: parsedUrl.hostname,
+          path: parsedUrl.path,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Referer': 'https://uppbeat.io/'
           }
+        };
+        https.get(options, function (res) {
+          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+            var redirectUrl = urlModule.resolve(targetUrl, res.headers.location);
+            fetchUrl(redirectUrl, depth + 1);
+            return;
+          }
+          var body = '';
+          res.on('data', function (chunk) { body += chunk; });
+          res.on('end', function () {
+            var parsed = parseHtml(body);
+            if (parsed) {
+              done(true, parsed.audioUrl, parsed.title);
+            } else {
+              done(false, null, 'Could not extract Uppbeat preview link from track page.');
+            }
+          });
+        }).on('error', function (err) {
+          done(false, null, 'Could not fetch Uppbeat track page: ' + err.message);
         });
-      }).on('error', function (err) {
-        done(false, null, 'Could not fetch Uppbeat track page: ' + err.message);
-      });
+      }
+      fetchUrl(canonicalUrl, 0);
     }
   }
 
