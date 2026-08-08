@@ -225,9 +225,65 @@
     return 'Download failed. Check the URL, access permissions, and connection.';
   }
 
+  function resolveUppbeatUrl(rawUrl, done) {
+    var trimmed = String(rawUrl || '').trim();
+    if (/\.mp3(?:\?.*)?$/i.test(trimmed)) {
+      var nameMatch = trimmed.match(/\/([^\/?#]+)\.mp3/i);
+      var title = nameMatch ? nameMatch[1].replace(/[-_]/g, ' ') : 'Uppbeat Track';
+      done(true, trimmed, title);
+      return;
+    }
+    var trackMatch = trimmed.match(/uppbeat\.io\/(?:music\/tracks|t)\/([\w-]+)\/([\w-]+)/i);
+    if (!trackMatch) {
+      done(false, trimmed, 'Invalid Uppbeat URL.');
+      return;
+    }
+    var artistSlug = trackMatch[1], trackSlug = trackMatch[2];
+    function capitalize(str) {
+      return str.replace(/[-_]/g, ' ').replace(/\b\w/g, function (l) { return l.toUpperCase(); });
+    }
+    var formattedTitle = capitalize(artistSlug) + ' - ' + capitalize(trackSlug);
+    var https = require('https');
+    var options = {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Referer': 'https://uppbeat.io/'
+      }
+    };
+    https.get(trimmed, options, function (res) {
+      var body = '';
+      res.on('data', function (chunk) { body += chunk; });
+      res.on('end', function () {
+        var mp3Match = body.match(/https?:\/\/[^\s"'<>]+\.mp3[^\s"'<>]*/i);
+        if (mp3Match) {
+          done(true, mp3Match[0], formattedTitle);
+        } else {
+          var fallbackCdn = 'https://cdn.uppbeat.io/audio-previews/' + artistSlug + '/' + trackSlug + '.mp3';
+          done(true, fallbackCdn, formattedTitle);
+        }
+      });
+    }).on('error', function () {
+      var fallbackCdn = 'https://cdn.uppbeat.io/audio-previews/' + artistSlug + '/' + trackSlug + '.mp3';
+      done(true, fallbackCdn, formattedTitle);
+    });
+  }
+
   api.media = {
-    ffmpeg: ffmpeg, ytdlp: ytdlp, extensions: finalExtensions, prepareForImport: prepareForImport, parseFormats: parseFormats, formatLabel: formatLabel,
+    ffmpeg: ffmpeg, ytdlp: ytdlp, extensions: finalExtensions, prepareForImport: prepareForImport, parseFormats: parseFormats, formatLabel: formatLabel, resolveUppbeatUrl: resolveUppbeatUrl,
     listFormats: function (rawUrl, done) {
+      var isUppbeat = /uppbeat\.io\//i.test(rawUrl) || /\.mp3(?:\?.*)?$/i.test(rawUrl);
+      if (isUppbeat) {
+        done(true, [{
+          id: 'mp3',
+          ext: 'mp3',
+          description: 'Uppbeat Audio Stream',
+          kind: 'audio',
+          resolution: '',
+          bitrate: '320 kbps'
+        }], '');
+        return;
+      }
       var isYouTube = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/|youtu\.be\/)/i.test(String(rawUrl).trim());
       var id = api.videoId(rawUrl), url = isYouTube && id ? 'https://www.youtube.com/watch?v=' + id : rawUrl;
       var args = ['--no-playlist', '--no-warnings', '--no-color', '--socket-timeout', '30', '--list-formats'].concat(cookieArguments(), [url]);
@@ -273,6 +329,7 @@
     },
     download: function (rawUrl, quality, section, handlers) {
       var isYouTube = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/|youtu\.be\/)/i.test(String(rawUrl).trim());
+      var isUppbeat = /uppbeat\.io\//i.test(rawUrl) || /\.mp3(?:\?.*)?$/i.test(rawUrl);
       var id = api.videoId(rawUrl), url = isYouTube && id ? 'https://www.youtube.com/watch?v=' + id : rawUrl, cancelled = false, currentProcess = null;
       function cancel() {
         if (cancelled) return;
@@ -309,6 +366,19 @@
           handlers.success(file, resolution);
         });
       }
+
+      if (isUppbeat) {
+        resolveUppbeatUrl(rawUrl, function (ok, audioUrl, trackTitle) {
+          var path = require('path');
+          var safeTitle = trackTitle.replace(/[\/\\?%*:|"<>]/g, '');
+          var args = ['--no-playlist', '--newline', '--windows-filenames', '--no-overwrites', '--retries', '3',
+            '--add-header', 'Referer: https://uppbeat.io/',
+            '-o', path.join(api.state.folder, safeTitle + ' [' + id + '].%(ext)s'), audioUrl];
+          run(args, { cookies: false, format: false, age: false });
+        });
+        return { cancel: cancel };
+      }
+
       run(argumentsFor(url, quality, false, section), { cookies: cookieArguments().length > 0, format: true, age: true });
       return { cancel: cancel };
     }

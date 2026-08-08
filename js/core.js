@@ -32,7 +32,10 @@ window.BunBunMedia = AetherCEP;
       value.match(/(?:story|t)\.snapchat\.com\/(?:p\/)?([\w-]+)(?:[/?#]|$)/i);
     if (match) return match[1];
 
-    if (/(?:^|\/\/)(?:www\.)?instagram\.com\//i.test(value) || /(?:^|\/\/)(?:www\.|story\.|t\.)?snapchat\.com\//i.test(value)) {
+    match = value.match(/uppbeat\.io\/(?:music\/tracks|t)\/([\w-]+)\/([\w-]+)(?:[/?#]|$)/i);
+    if (match) return match[1] + '-' + match[2];
+
+    if (/(?:^|\/\/)(?:www\.)?instagram\.com\//i.test(value) || /(?:^|\/\/)(?:www\.|story\.|t\.)?snapchat\.com\//i.test(value) || /uppbeat\.io\//i.test(value) || /\.mp3(?:\?|$)/i.test(value)) {
       try { return require('crypto').createHash('md5').update(value).digest('hex').slice(0, 11); } catch (e) { return ''; }
     }
     return '';
@@ -41,7 +44,9 @@ window.BunBunMedia = AetherCEP;
     var value = String(url || '').trim();
     return /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?(?:[^#\s]*&)?v=|shorts\/|embed\/)|youtu\.be\/)[\w-]+(?:[/?&#]|$)/i.test(value) ||
       /^(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:(?:p|reel|reels|tv)\/[\w-]+|stories\/[^/?#\s]+\/[\w-]+)(?:[/?#]|$)/i.test(value) ||
-      /^(?:https?:\/\/)?(?:(?:www\.)?snapchat\.com\/(?:spotlight|t|add|story|stories|p)\/|(?:story|t)\.snapchat\.com\/(?:p\/)?)[\w-]+(?:[/?#]|$)/i.test(value);
+      /^(?:https?:\/\/)?(?:(?:www\.)?snapchat\.com\/(?:spotlight|t|add|story|stories|p)\/|(?:story|t)\.snapchat\.com\/(?:p\/)?)[\w-]+(?:[/?#]|$)/i.test(value) ||
+      /^(?:https?:\/\/)?(?:www\.)?uppbeat\.io\/(?:music\/tracks\/|t\/)[\w-]+\/[\w-]+(?:[/?#]|$)/i.test(value) ||
+      /^https?:\/\/.*\.mp3(?:\?.*)?$/i.test(value);
   };
   api.defaultFolder = function () {
     try {
